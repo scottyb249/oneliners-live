@@ -21,6 +21,19 @@ export default function ActivePhase({ game, player }: Props) {
 
   const canSubmit = player.role === 'individual' || player.role === 'team_leader'
 
+  const acronym = game.current_acronym ?? '—'
+  const letterCount = acronym.replace(/[^A-Z]/gi, '').length
+
+  // Scale font size down for longer acronyms to prevent overflow on mobile
+  const acronymFontSize =
+    letterCount <= 3 ? '5rem' :
+    letterCount === 4 ? '4rem' :
+    letterCount === 5 ? '3.25rem' :
+    '2.5rem' // 6 letters (KRACRONYM)
+
+  // KRACRONYM gets 90 seconds, regular rounds get 60
+  const timerSeconds = game.is_final_round ? 90 : 60
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!answer.trim() || submitting || locked) return
@@ -52,15 +65,22 @@ export default function ActivePhase({ game, player }: Props) {
       {/* Acronym display */}
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
-          Round {game.current_round}
+          Round {game.current_round}{game.is_final_round ? ' · KRACRONYM' : ''}
         </p>
-        <p className="mt-3 text-7xl font-black tracking-[0.35em] text-white">
-          {game.current_acronym ?? '—'}
+        <p
+          className="mt-3 font-black tracking-[0.2em] text-white break-all"
+          style={{ fontSize: acronymFontSize, lineHeight: 1.1 }}
+        >
+          {acronym}
         </p>
         <p className="mt-2 text-sm text-white/30">Write a one-liner for each letter</p>
       </div>
 
-      <CountdownTimer key={`active-r${game.current_round}`} seconds={60} onExpire={handleExpire} />
+      <CountdownTimer
+        key={`active-r${game.current_round}`}
+        seconds={timerSeconds}
+        onExpire={handleExpire}
+      />
 
       {/* Role-based submission UI */}
       {canSubmit ? (
