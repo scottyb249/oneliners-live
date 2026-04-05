@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game, Player } from '../types'
 import CountdownTimer from '@/app/components/CountdownTimer'
@@ -24,15 +24,38 @@ export default function ActivePhase({ game, player }: Props) {
   const acronym = game.current_acronym ?? '—'
   const letterCount = acronym.replace(/[^A-Z]/gi, '').length
 
-  // Scale font size down for longer acronyms to prevent overflow on mobile
   const acronymFontSize =
     letterCount <= 3 ? '5rem' :
     letterCount === 4 ? '4rem' :
     letterCount === 5 ? '3.25rem' :
-    '2.5rem' // 6 letters (KRACRONYM)
+    '2.5rem'
 
-  // KRACRONYM gets 90 seconds, regular rounds get 60
   const timerSeconds = game.is_final_round ? 90 : 60
+
+  // Check on mount (and when round changes) if player already submitted
+  useEffect(() => {
+    async function checkExisting() {
+      const { data } = await supabase
+        .from('answers')
+        .select('id')
+        .eq('game_id', game.id)
+        .eq('player_id', player.id)
+        .eq('round', game.current_round)
+        .maybeSingle()
+
+      if (data) {
+        setSubmitted(true)
+        setLocked(true)
+      } else {
+        // Reset for new round
+        setSubmitted(false)
+        setLocked(false)
+        setAnswer('')
+        setError('')
+      }
+    }
+    checkExisting()
+  }, [game.id, game.current_round, player.id])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -82,7 +105,6 @@ export default function ActivePhase({ game, player }: Props) {
         onExpire={handleExpire}
       />
 
-      {/* Role-based submission UI */}
       {canSubmit ? (
         submitted || locked ? (
           <div className="rounded-2xl border border-green-500/30 bg-green-500/10 px-6 py-5 text-center">
