@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game } from '@/lib/types'
-import PasswordGate from './components/PasswordGate'
 import TopBar from './components/TopBar'
 import PreGamePanel from './panels/PreGamePanel'
 import AcronymPicker from './panels/AcronymPicker'
@@ -25,10 +24,9 @@ interface Props {
 
 export default function HostClient({ gameId: rawGameId }: Props) {
   const gameId = decodeURIComponent(rawGameId).replace(/^\[|\]$/g, '')
-  const [authenticated, setAuthenticated] = useState(false)
   const [game, setGame] = useState<Game | null>(null)
   const [playerCount, setPlayerCount] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
   // Acronym picker overlay state
@@ -36,9 +34,8 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
 
-  // Load only after authentication
+  // Load game on mount
   useEffect(() => {
-    if (!authenticated) return
     setLoading(true)
     setLoadError('')
 
@@ -59,7 +56,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       setLoading(false)
     }
     init()
-  }, [authenticated, gameId])
+  }, [gameId])
 
   // Realtime: game updates + player joins
   useEffect(() => {
@@ -84,8 +81,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setPickerIsFinalRound(isFinalRound)
     setShowAcronymPicker(true)
   }
-
-  if (!authenticated) return <PasswordGate onAuthenticated={() => setAuthenticated(true)} />
 
   if (loading) {
     return (
@@ -113,7 +108,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       <TopBar game={game} />
 
       <div className="flex-1 px-4 py-6">
-        {/* Acronym picker overlays current panel */}
         {showAcronymPicker ? (
           <AcronymPicker
             game={game}
