@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Game } from '@/lib/types'
 import TopBar from './components/TopBar'
@@ -24,17 +25,16 @@ interface Props {
 
 export default function HostClient({ gameId: rawGameId }: Props) {
   const gameId = decodeURIComponent(rawGameId).replace(/^\[|\]$/g, '')
+  const router = useRouter()
   const [game, setGame] = useState<Game | null>(null)
   const [playerCount, setPlayerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  // Acronym picker overlay state
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
 
-  // Load game on mount
   useEffect(() => {
     setLoading(true)
     setLoadError('')
@@ -58,7 +58,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     init()
   }, [gameId])
 
-  // Realtime: game updates + player joins
   useEffect(() => {
     const channel = supabase
       .channel(`host-game-${gameId}`)
@@ -84,7 +83,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
 
   if (loading) {
     return (
-      <main className="flex min-h-full items-center justify-center bg-zinc-950">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950">
         <p className="animate-pulse text-white/40">Loading game...</p>
       </main>
     )
@@ -92,7 +91,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
 
   if (loadError || !game) {
     return (
-      <main className="flex min-h-full items-center justify-center bg-zinc-950 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
         <div className="text-center space-y-2">
           <p className="text-red-400 font-semibold">Game not found.</p>
           {loadError && (
@@ -103,8 +102,46 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     )
   }
 
+  if (game.status === 'ended') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 text-center gap-8">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-6xl">🎉</p>
+          <h1 className="text-5xl font-black text-white">Game Over!</h1>
+          <p className="text-lg text-white/40">Thanks for hosting, {game.host_name}.</p>
+        </div>
+
+        <div className="flex flex-col w-full max-w-sm gap-3">
+          <button
+            onClick={() => router.push('/host')}
+            className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+          >
+            Start New Game →
+          </button>
+          <button
+            onClick={async () => {
+              await supabase
+                .from('games')
+                .update({
+                  status: 'waiting',
+                  current_round: 1,
+                  current_acronym: null,
+                  is_final_round: false,
+                  is_tiebreaker_ran: false,
+                })
+                .eq('id', game.id)
+            }}
+            className="w-full rounded-xl border border-white/20 py-4 text-lg font-bold text-white/60 transition-all hover:border-white/40 hover:text-white active:scale-95"
+          >
+            Back to Lobby
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main className="flex min-h-full flex-col bg-zinc-950">
+    <main className="flex min-h-screen flex-col bg-zinc-950">
       <TopBar game={game} />
 
       <div className="flex-1 px-4 py-6">
@@ -144,13 +181,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             )}
             {game.status === 'tiebreaker' && (
               <TiebreakerPanel game={game} />
-            )}
-            {game.status === 'ended' && (
-              <div className="flex flex-col items-center gap-4 py-16 text-center">
-                <p className="text-4xl">🎉</p>
-                <p className="text-2xl font-black text-white">Game Over!</p>
-                <p className="text-white/40">The game has ended. Thanks for hosting!</p>
-              </div>
             )}
           </>
         )}
