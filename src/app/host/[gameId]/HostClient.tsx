@@ -81,6 +81,21 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setShowAcronymPicker(true)
   }
 
+  async function handleBackToLobby() {
+    await supabase.from('answers').delete().eq('game_id', gameId)
+    await supabase.from('votes').delete().eq('game_id', gameId)
+    await supabase
+      .from('games')
+      .update({
+        status: 'waiting',
+        current_round: 1,
+        current_acronym: null,
+        is_final_round: false,
+        is_tiebreaker_ran: false,
+      })
+      .eq('id', gameId)
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -108,7 +123,9 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         <div className="flex flex-col items-center gap-4">
           <p className="text-6xl">🎉</p>
           <h1 className="text-5xl font-black text-white">Game Over!</h1>
-          <p className="text-lg text-white/40">Thanks for hosting, {game.host_name}.</p>
+          <p className="text-lg text-white/40">
+            Thanks for hosting, {game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}.
+          </p>
         </div>
 
         <div className="flex flex-col w-full max-w-sm gap-3">
@@ -119,18 +136,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             Start New Game →
           </button>
           <button
-            onClick={async () => {
-              await supabase
-                .from('games')
-                .update({
-                  status: 'waiting',
-                  current_round: 1,
-                  current_acronym: null,
-                  is_final_round: false,
-                  is_tiebreaker_ran: false,
-                })
-                .eq('id', game.id)
-            }}
+            onClick={handleBackToLobby}
             className="w-full rounded-xl border border-white/20 py-4 text-lg font-bold text-white/60 transition-all hover:border-white/40 hover:text-white active:scale-95"
           >
             Back to Lobby
