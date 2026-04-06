@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 const HOST_PASSWORD = 'onel1ners'
@@ -90,13 +89,11 @@ export default function HostLanding() {
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
 
         {/* Logo */}
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/logo.png"
           alt="O.N.E. Liners Live"
-          width={320}
-          height={320}
           className="w-64 h-auto"
-          priority
         />
 
         {/* Step label */}
