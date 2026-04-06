@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 const HOST_PASSWORD = 'onel1ners'
-const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ' // no I or O to avoid confusion
+const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 function generateCode(): string {
   return Array.from({ length: 4 }, () =>
@@ -59,20 +60,20 @@ export default function HostLanding() {
       const code = await getUniqueCode()
 
       const { data, error: insertError } = await supabase
-  .from('games')
-  .insert({
-    code,
-    host_name: hostName.trim(),
-    status: 'waiting',
-    round: 1,
-    current_acronym: null,
-    round_started_at: null,
-    is_final_round: false,
-    is_tiebreaker_ran: false,
-    letter_pattern: [3, 4, 4, 5, 5],
-  })
-  .select('id')
-  .single()
+        .from('games')
+        .insert({
+          code,
+          host_name: hostName.trim(),
+          status: 'waiting',
+          round: 1,
+          current_acronym: null,
+          round_started_at: null,
+          is_final_round: false,
+          is_tiebreaker_ran: false,
+          letter_pattern: [3, 4, 4, 5, 5],
+        })
+        .select('id')
+        .single()
 
       if (insertError) throw insertError
 
@@ -85,127 +86,73 @@ export default function HostLanding() {
   }
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      backgroundColor: 'var(--color-background-tertiary)',
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        background: 'var(--color-background-primary)',
-        border: '0.5px solid var(--color-border-tertiary)',
-        borderRadius: '16px',
-        padding: '2rem',
-      }}>
+    <main className="min-h-screen flex items-center justify-center bg-zinc-950 px-6">
+      <div className="w-full max-w-sm flex flex-col items-center gap-8">
 
-        {/* Logo / title */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{
-            fontSize: '26px',
-            fontWeight: '500',
-            color: 'var(--color-text-primary)',
-            margin: '0 0 6px',
-          }}>
-            O.N.E. Liners Live
+        {/* Logo */}
+        <Image
+          src="/logo.png"
+          alt="O.N.E. Liners Live"
+          width={320}
+          height={320}
+          className="w-64 h-auto"
+          priority
+        />
+
+        {/* Step label */}
+        <div className="text-center">
+          <h1 className="text-3xl font-black text-white">
+            {step === 'password' ? 'Host Access' : 'New Game'}
           </h1>
-          <p style={{
-            fontSize: '14px',
-            color: 'var(--color-text-secondary)',
-            margin: 0,
-          }}>
-            {step === 'password' ? 'Host access' : 'Create a new game'}
+          <p className="mt-1 text-white/40 text-sm">
+            {step === 'password' ? 'Enter your host password to continue' : 'Enter your name to create a game'}
           </p>
         </div>
 
         {/* Step 1: Password */}
         {step === 'password' && (
-          <form onSubmit={handlePasswordSubmit}>
-            <label style={{
-              display: 'block',
-              fontSize: '13px',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '6px',
-            }}>
-              Host password
-            </label>
+          <form onSubmit={handlePasswordSubmit} className="w-full flex flex-col gap-4">
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder="Host password"
               autoFocus
-              style={{ width: '100%', marginBottom: '8px', boxSizing: 'border-box' }}
+              className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-lg text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
             />
             {passwordError && (
-              <p style={{
-                fontSize: '13px',
-                color: 'var(--color-text-danger)',
-                margin: '0 0 12px',
-              }}>
-                {passwordError}
-              </p>
+              <p className="text-sm text-red-400 text-center">{passwordError}</p>
             )}
             <button
               type="submit"
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginTop: '4px',
-                fontSize: '15px',
-                cursor: 'pointer',
-              }}
+              className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
             >
-              Continue
+              Continue →
             </button>
           </form>
         )}
 
         {/* Step 2: Create game */}
         {step === 'create' && (
-          <form onSubmit={handleCreateGame}>
-            <label style={{
-              display: 'block',
-              fontSize: '13px',
-              color: 'var(--color-text-secondary)',
-              marginBottom: '6px',
-            }}>
-              Your name (shown to players)
-            </label>
+          <form onSubmit={handleCreateGame} className="w-full flex flex-col gap-4">
             <input
               type="text"
               value={hostName}
               onChange={e => setHostName(e.target.value)}
-              placeholder="e.g. Scott"
+              placeholder="Your name"
               maxLength={30}
               autoFocus
-              style={{ width: '100%', marginBottom: '8px', boxSizing: 'border-box' }}
+              className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-lg text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
             />
             {error && (
-              <p style={{
-                fontSize: '13px',
-                color: 'var(--color-text-danger)',
-                margin: '0 0 12px',
-              }}>
-                {error}
-              </p>
+              <p className="text-sm text-red-400 text-center">{error}</p>
             )}
             <button
               type="submit"
               disabled={loading || !hostName.trim()}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginTop: '4px',
-                fontSize: '15px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading || !hostName.trim() ? 0.5 : 1,
-              }}
+              className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Creating game...' : 'Create game'}
+              {loading ? 'Creating game...' : 'Create Game →'}
             </button>
           </form>
         )}
