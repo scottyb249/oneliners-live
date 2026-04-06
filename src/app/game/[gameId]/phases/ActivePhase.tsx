@@ -32,7 +32,6 @@ export default function ActivePhase({ game, player }: Props) {
 
   const timerSeconds = game.is_final_round ? 90 : 60
 
-  // Check on mount (and when round changes) if player already submitted
   useEffect(() => {
     async function checkExisting() {
       const { data } = await supabase
@@ -47,7 +46,6 @@ export default function ActivePhase({ game, player }: Props) {
         setSubmitted(true)
         setLocked(true)
       } else {
-        // Reset for new round
         setSubmitted(false)
         setLocked(false)
         setAnswer('')
@@ -96,7 +94,7 @@ export default function ActivePhase({ game, player }: Props) {
         >
           {acronym}
         </p>
-        <p className="mt-2 text-sm text-white/30">Write a one-liner for each letter</p>
+        <p className="mt-2 text-sm text-white/60">Write a one-liner for each letter</p>
       </div>
 
       <CountdownTimer
@@ -109,7 +107,7 @@ export default function ActivePhase({ game, player }: Props) {
         submitted || locked ? (
           <div className="rounded-2xl border border-green-500/30 bg-green-500/10 px-6 py-5 text-center">
             <p className="text-lg font-bold text-green-400">Answer submitted!</p>
-            <p className="mt-1 text-sm text-white/40">Get ready to vote.</p>
+            <p className="mt-1 text-sm text-white/60">Get ready to vote.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,7 +118,7 @@ export default function ActivePhase({ game, player }: Props) {
               maxLength={200}
               rows={3}
               disabled={locked}
-              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/20 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30 disabled:opacity-40"
+              className="w-full resize-none rounded-xl border border-white/40 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30 disabled:opacity-40"
             />
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
@@ -136,13 +134,13 @@ export default function ActivePhase({ game, player }: Props) {
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
           <p className="text-3xl">🤝</p>
           <p className="mt-3 font-semibold text-white">Your Team Leader is submitting for your team.</p>
-          <p className="mt-1 text-sm text-white/40">Cheer them on!</p>
+          <p className="mt-1 text-sm text-white/60">Cheer them on!</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
           <p className="text-3xl">🗳️</p>
           <p className="mt-3 font-semibold text-white">Get ready to vote!</p>
-          <p className="mt-1 text-sm text-white/40">Voting opens when the round ends.</p>
+          <p className="mt-1 text-sm text-white/60">Voting opens when the round ends.</p>
         </div>
       )}
     </div>
