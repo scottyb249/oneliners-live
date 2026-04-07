@@ -34,7 +34,6 @@ export default function AcronymPicker({
         .from('prompts')
         .select('*')
         .eq('letter_count', letterCount)
-        .eq('used', false)
         .order('theme', { nullsFirst: false })
         .order('acronym')
 
@@ -72,7 +71,6 @@ export default function AcronymPicker({
       return
     }
 
-    await supabase.from('prompts').update({ used: true }).eq('id', selected.id)
     onConfirmed()
   }
 
@@ -115,7 +113,7 @@ export default function AcronymPicker({
         <p className="text-center animate-pulse text-white/40">Loading prompts...</p>
       ) : filtered.length === 0 ? (
         <p className="text-center text-white/40">
-          No unused {letterCount}-letter prompts found.
+          No {letterCount}-letter prompts found.
         </p>
       ) : (
         <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">

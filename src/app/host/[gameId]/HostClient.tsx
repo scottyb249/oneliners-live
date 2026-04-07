@@ -61,6 +61,14 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }, [gameId])
 
   useEffect(() => {
+    async function refreshPlayerCount() {
+      const { count } = await supabase
+        .from('players')
+        .select('*', { count: 'exact', head: true })
+        .eq('game_id', gameId)
+      setPlayerCount(count ?? 0)
+    }
+
     const channel = supabase
       .channel(`host-game-${gameId}`)
       .on(
@@ -71,12 +79,12 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => setPlayerCount((prev) => prev + 1),
+        () => refreshPlayerCount(),
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => setPlayerCount((prev) => Math.max(0, prev - 1)),
+        () => refreshPlayerCount(),
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -187,6 +195,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       </div>
 
       <div className="flex-1 px-4 py-4">
+        {/* Acronym picker takes priority over all phase panels */}
         {showAcronymPicker ? (
           <AcronymPicker
             game={game}

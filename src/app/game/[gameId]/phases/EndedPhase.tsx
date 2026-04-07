@@ -23,12 +23,6 @@ export default function EndedPhase({ game, player }: Props) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Clear localStorage so player can join a new game fresh
-  useEffect(() => {
-    localStorage.removeItem('one_game_id')
-    localStorage.removeItem('one_player_id')
-  }, [])
-
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -44,6 +38,12 @@ export default function EndedPhase({ game, player }: Props) {
     }
     load()
   }, [game.id])
+
+  function handleDone() {
+    localStorage.removeItem('one_game_id')
+    localStorage.removeItem('one_player_id')
+    window.location.href = '/'
+  }
 
   const isNonScoring = player.role === 'team_member' || player.role === 'crowd_voter'
   const myPosition = leaderboard.findIndex((p) => p.id === player.id) + 1
@@ -130,9 +130,12 @@ export default function EndedPhase({ game, player }: Props) {
         })}
       </div>
 
-      <p className="text-center text-sm text-white/30">
-        Thanks for playing O.N.E. Liners Live!
-      </p>
+      <button
+        onClick={handleDone}
+        className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+      >
+        Done →
+      </button>
     </div>
   )
 }
