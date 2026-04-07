@@ -102,6 +102,9 @@ export default function EndedPhase({ game, player }: Props) {
       <div className="space-y-3">
         {leaderboard.map((entry, i) => {
           const isMe = entry.id === player.id
+          const displayName = entry.role === 'team_leader' && entry.team_name
+            ? entry.team_name
+            : entry.name
           return (
             <div
               key={entry.id}
@@ -114,11 +117,11 @@ export default function EndedPhase({ game, player }: Props) {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white truncate">
-                  {entry.name}{' '}
+                  {displayName}{' '}
                   {isMe && <span className="text-sm text-yellow-400">(You)</span>}
                 </p>
-                {entry.team_name && (
-                  <p className="text-xs text-white/40 truncate">{entry.team_name}</p>
+                {entry.role === 'team_leader' && entry.team_name && (
+                  <p className="text-xs text-white/40 truncate">led by {entry.name}</p>
                 )}
               </div>
               <p className="shrink-0 text-xl font-black text-white">{entry.score}</p>

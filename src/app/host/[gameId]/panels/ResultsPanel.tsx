@@ -18,6 +18,8 @@ interface AnswerWithVotes extends Answer {
 interface LeaderboardEntry {
   id: string
   name: string
+  role: string
+  team_name: string | null
   score: number
   is_tiebreaker_participant: boolean
 }
@@ -45,8 +47,10 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           .eq('round', game.current_round),
         supabase
           .from('players')
-          .select('id, name, score, is_tiebreaker_participant')
+          .select('id, name, role, team_name, score, is_tiebreaker_participant')
           .eq('game_id', game.id)
+          .neq('role', 'team_member')
+          .neq('role', 'crowd_voter')
           .order('score', { ascending: false }),
       ])
 
@@ -89,7 +93,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     setActionLoading(true)
     const allPlayerIds = leaderboard.map((p) => p.id)
 
-    // Mark tied players as tiebreaker participants
     await Promise.all(
       allPlayerIds.map((id) =>
         supabase
@@ -109,7 +112,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     if (actionLoading) return
     setActionLoading(true)
 
-    // Assign final_position based on score (ties get same position)
     let pos = 1
     for (let i = 0; i < leaderboard.length; i++) {
       if (i > 0 && leaderboard[i].score < leaderboard[i - 1].score) pos = i + 1
@@ -164,13 +166,23 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
           Leaderboard
         </p>
-        {leaderboard.map((player, i) => (
-          <div key={player.id} className="flex items-center gap-3">
-            <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
-            <p className="flex-1 text-sm font-semibold text-white truncate">{player.name}</p>
-            <p className="text-sm font-black text-white">{player.score}</p>
-          </div>
-        ))}
+        {leaderboard.map((player, i) => {
+          const displayName = player.role === 'team_leader' && player.team_name
+            ? player.team_name
+            : player.name
+          return (
+            <div key={player.id} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                {player.role === 'team_leader' && player.team_name && (
+                  <p className="text-xs text-white/30 truncate">led by {player.name}</p>
+                )}
+              </div>
+              <p className="text-sm font-black text-white">{player.score}</p>
+            </div>
+          )
+        })}
       </div>
 
       {/* --- Post-KRACRONYM: tie detection & end game --- */}
@@ -191,7 +203,9 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
                 {tiedPositions.map(({ position, players }) => (
                   <p key={position} className="text-sm text-white">
                     <span className="font-bold text-white/60">#{position}:</span>{' '}
-                    {players.map((p) => p.name).join(' vs ')}
+                    {players.map((p) =>
+                      p.role === 'team_leader' && p.team_name ? p.team_name : p.name
+                    ).join(' vs ')}
                   </p>
                 ))}
                 <button
@@ -215,7 +229,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           </div>
         )
       ) : (
-        /* --- Normal round: Next Round / Break / Final Round buttons --- */
         <div className="space-y-3">
           <button
             onClick={onNextRound}

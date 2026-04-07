@@ -73,6 +73,11 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
         () => setPlayerCount((prev) => prev + 1),
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
+        () => setPlayerCount((prev) => Math.max(0, prev - 1)),
+      )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
@@ -102,7 +107,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }
 
   async function handleBackToLobby() {
-    // Delete all answers, votes, and non-host players so lobby starts completely fresh
     await supabase.from('answers').delete().eq('game_id', gameId)
     await supabase.from('votes').delete().eq('game_id', gameId)
     await supabase.from('players').delete().eq('game_id', gameId).eq('is_host', false)
