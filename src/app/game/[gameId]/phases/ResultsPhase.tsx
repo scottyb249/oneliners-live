@@ -18,6 +18,10 @@ export default function ResultsPhase({ game, player }: Props) {
   const [pointsEarned, setPointsEarned] = useState(0)
   const [loading, setLoading] = useState(true)
 
+  const isTeamMember = player.role === 'team_member'
+  const isCrowdVoter = player.role === 'crowd_voter'
+  const isNonScoring = isTeamMember || isCrowdVoter
+
   useEffect(() => {
     async function load() {
       const [{ data: answers }, { data: votes }] = await Promise.all([
@@ -37,7 +41,6 @@ export default function ResultsPhase({ game, player }: Props) {
 
       if (!answers || !votes) { setLoading(false); return }
 
-      // Tally votes per answer
       const tally: Record<string, number> = {}
       for (const vote of votes) {
         tally[vote.answer_id] = (tally[vote.answer_id] ?? 0) + 1
@@ -49,12 +52,20 @@ export default function ResultsPhase({ game, player }: Props) {
 
       setResults(withVotes)
 
-      const myAnswer = withVotes.find((a) => a.player_id === player.id)
-      setPointsEarned(myAnswer?.vote_count ?? 0)
+      if (isTeamMember) {
+        const teamAnswer = withVotes.find(
+          (a) => a.players?.team_name === player.team_name
+        )
+        setPointsEarned(teamAnswer?.vote_count ?? 0)
+      } else if (!isCrowdVoter) {
+        const myAnswer = withVotes.find((a) => a.player_id === player.id)
+        setPointsEarned(myAnswer?.vote_count ?? 0)
+      }
+
       setLoading(false)
     }
     load()
-  }, [game.id, game.current_round, player.id])
+  }, [game.id, game.current_round, player.id, player.team_name, isTeamMember, isCrowdVoter])
 
   if (loading) {
     return (
@@ -73,22 +84,35 @@ export default function ResultsPhase({ game, player }: Props) {
         <p className="mt-1 text-2xl font-bold text-white">The votes are in</p>
       </div>
 
-      {/* Points earned this round */}
-      <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
-        <p className="text-sm text-white/50">You earned</p>
-        <p className="text-5xl font-black text-yellow-400">{pointsEarned}</p>
-        <p className="text-sm text-white/50">{pointsEarned === 1 ? 'point' : 'points'} this round</p>
-      </div>
+      {/* Points card — crowd voters see a neutral version */}
+      {isCrowdVoter ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
+          <p className="text-3xl">🗳️</p>
+          <p className="mt-2 font-semibold text-white">Thanks for voting!</p>
+          <p className="mt-1 text-sm text-white/50">See how the round played out below.</p>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
+          <p className="text-sm text-white/50">
+            {isTeamMember ? 'Your team earned' : 'You earned'}
+          </p>
+          <p className="text-5xl font-black text-yellow-400">{pointsEarned}</p>
+          <p className="text-sm text-white/50">{pointsEarned === 1 ? 'point' : 'points'} this round</p>
+        </div>
+      )}
 
       {/* Ranked answers */}
       <div className="space-y-3">
         {results.map((answer, i) => {
-          const isOwn = answer.player_id === player.id
+          const isOwnTeam = isTeamMember
+            ? answer.players?.team_name === player.team_name
+            : answer.player_id === player.id
+          const highlight = !isCrowdVoter && isOwnTeam
           return (
             <div
               key={answer.id}
               className={`rounded-xl border px-5 py-4 ${
-                isOwn ? 'border-yellow-400/40 bg-yellow-400/10' : 'border-white/10 bg-white/5'
+                highlight ? 'border-yellow-400/40 bg-yellow-400/10' : 'border-white/10 bg-white/5'
               }`}
             >
               <div className="flex items-start gap-4">
@@ -96,7 +120,7 @@ export default function ResultsPhase({ game, player }: Props) {
                   <p className="text-xs font-semibold text-white/40 mb-1">
                     #{i + 1} · {answer.players?.name ?? 'Unknown'}
                     {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
-                    {isOwn ? ' · You' : ''}
+                    {highlight ? (isTeamMember ? ' · Your Team' : ' · You') : ''}
                   </p>
                   <p className="text-base text-white">{answer.content}</p>
                 </div>

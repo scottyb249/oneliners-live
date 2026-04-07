@@ -23,6 +23,12 @@ export default function EndedPhase({ game, player }: Props) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Clear localStorage so player can join a new game fresh
+  useEffect(() => {
+    localStorage.removeItem('one_game_id')
+    localStorage.removeItem('one_player_id')
+  }, [])
+
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -31,12 +37,18 @@ export default function EndedPhase({ game, player }: Props) {
         .eq('game_id', game.id)
         .order('score', { ascending: false })
 
-      if (data) setLeaderboard(data)
+      if (data) {
+        // Filter out team members and crowd voters — they don't score
+        setLeaderboard(
+          data.filter((p) => p.role !== 'team_member' && p.role !== 'crowd_voter')
+        )
+      }
       setLoading(false)
     }
     load()
   }, [game.id])
 
+  const isNonScoring = player.role === 'team_member' || player.role === 'crowd_voter'
   const myPosition = leaderboard.findIndex((p) => p.id === player.id) + 1
   const myEntry = leaderboard.find((p) => p.id === player.id)
 
@@ -58,8 +70,8 @@ export default function EndedPhase({ game, player }: Props) {
         <p className="mt-1 text-3xl font-black text-white">Final Leaderboard</p>
       </div>
 
-      {/* Current player's finish position */}
-      {myPosition > 0 && myEntry && (
+      {/* Scoring player finish position */}
+      {!isNonScoring && myPosition > 0 && myEntry && (
         <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
           <p className="text-sm text-white/50">You finished</p>
           <p className="mt-1 text-5xl font-black text-yellow-400">
@@ -68,6 +80,24 @@ export default function EndedPhase({ game, player }: Props) {
           <p className="mt-1 text-sm text-white/50">
             with {myEntry.score} {myEntry.score === 1 ? 'point' : 'points'}
           </p>
+        </div>
+      )}
+
+      {/* Team member acknowledgment */}
+      {player.role === 'team_member' && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
+          <p className="text-3xl">🤝</p>
+          <p className="mt-2 font-semibold text-white">Great teamwork!</p>
+          <p className="mt-1 text-sm text-white/50">Check your team leader's score below.</p>
+        </div>
+      )}
+
+      {/* Crowd voter acknowledgment */}
+      {player.role === 'crowd_voter' && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
+          <p className="text-3xl">🗳️</p>
+          <p className="mt-2 font-semibold text-white">Thanks for voting!</p>
+          <p className="mt-1 text-sm text-white/50">Your votes helped crown the winner.</p>
         </div>
       )}
 
