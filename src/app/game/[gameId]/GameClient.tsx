@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Game, Player } from './types'
 import WaitingPhase from './phases/WaitingPhase'
@@ -16,10 +17,13 @@ interface Props {
 }
 
 export default function GameClient({ gameId, playerId }: Props) {
+  const router = useRouter()
   const [game, setGame] = useState<Game | null>(null)
   const [player, setPlayer] = useState<Player | null>(null)
   const [playerCount, setPlayerCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   // Initial data load
   useEffect(() => {
@@ -57,6 +61,16 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
+  async function handleLeave() {
+    setLeaving(true)
+    // Delete player record from Supabase
+    await supabase.from('players').delete().eq('id', playerId)
+    // Clear localStorage session
+    localStorage.removeItem('one_game_id')
+    localStorage.removeItem('one_player_id')
+    router.replace('/')
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-full items-center justify-center bg-zinc-950">
@@ -78,11 +92,17 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   return (
     <main className="flex min-h-full flex-col items-center bg-zinc-950 px-4 py-10">
-      {/* Persistent header */}
-      <div className="mb-8 text-center">
+      {/* Persistent header with leave button */}
+      <div className="mb-8 flex w-full max-w-md items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
           O.N.E. Liners Live
         </p>
+        <button
+          onClick={() => setShowLeaveConfirm(true)}
+          className="text-xs font-semibold uppercase tracking-widest text-white/30 hover:text-white/60 transition-colors"
+        >
+          Leave Game
+        </button>
       </div>
 
       {game.status === 'waiting' && (
@@ -93,6 +113,32 @@ export default function GameClient({ gameId, playerId }: Props) {
       {game.status === 'results' && <ResultsPhase game={game} player={player} />}
       {game.status === 'tiebreaker' && <TiebreakerPhase game={game} player={player} />}
       {game.status === 'ended' && <EndedPhase game={game} player={player} />}
+
+      {/* Leave confirmation modal */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">
+            <p className="text-lg font-bold text-white">Leave the game?</p>
+            <p className="text-sm text-white/50">You'll be removed from the game and sent back to the join screen.</p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                disabled={leaving}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-all disabled:opacity-50"
+              >
+                Stay
+              </button>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 text-sm font-bold text-white hover:bg-red-400 transition-all disabled:opacity-50"
+              >
+                {leaving ? 'Leaving...' : 'Leave'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

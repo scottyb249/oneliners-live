@@ -40,6 +40,7 @@ export default function JoinForm() {
   const [role, setRole] = useState<Role | null>(null)
   const [teamName, setTeamName] = useState('')
   const [existingTeams, setExistingTeams] = useState<string[]>([])
+  const [teamsLoading, setTeamsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -52,16 +53,25 @@ export default function JoinForm() {
     }
   }, [router])
 
-  // When role changes to team_member, fetch existing teams for the entered game code
+  // When role is team_member and game code is entered, fetch existing teams
   useEffect(() => {
-    if (role !== 'team_member' || !gameCode.trim()) return
+    if (role !== 'team_member' || gameCode.trim().length < 4) {
+      setExistingTeams([])
+      setTeamName('')
+      return
+    }
     async function fetchTeams() {
+      setTeamsLoading(true)
       const { data: game } = await supabase
         .from('games')
         .select('id')
         .ilike('code', gameCode.trim())
         .single()
-      if (!game) return
+      if (!game) {
+        setExistingTeams([])
+        setTeamsLoading(false)
+        return
+      }
       const { data: leaders } = await supabase
         .from('players')
         .select('team_name')
@@ -71,6 +81,7 @@ export default function JoinForm() {
       if (leaders) {
         setExistingTeams(leaders.map((l) => l.team_name).filter(Boolean) as string[])
       }
+      setTeamsLoading(false)
     }
     fetchTeams()
   }, [role, gameCode])
@@ -84,8 +95,13 @@ export default function JoinForm() {
       return
     }
 
-    if ((role === 'team_leader' || role === 'team_member') && !teamName.trim()) {
-      setError('Please enter or select a team name.')
+    if (role === 'team_leader' && !teamName.trim()) {
+      setError('Please enter a team name.')
+      return
+    }
+
+    if (role === 'team_member' && !teamName.trim()) {
+      setError('Please select a team to join.')
       return
     }
 
@@ -128,7 +144,6 @@ export default function JoinForm() {
         return
       }
 
-      // Save to localStorage so back-arrow doesn't create a ghost player
       localStorage.setItem('one_game_id', game.id)
       localStorage.setItem('one_player_id', player.id)
 
@@ -208,22 +223,40 @@ export default function JoinForm() {
         </div>
       </div>
 
-      {/* Team Name — shown for team_leader and team_member */}
-      {needsTeamName && (
+      {/* Team Leader — free text input */}
+      {role === 'team_leader' && (
         <div className="space-y-2">
           <label className="block text-sm font-semibold uppercase tracking-widest text-yellow-400">
-            {role === 'team_leader' ? 'Team Name' : 'Your Team'}
+            Team Name
           </label>
+          <input
+            type="text"
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            placeholder="e.g. Team Chaos"
+            maxLength={30}
+            autoComplete="off"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-lg text-white placeholder:text-white/20 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
+          />
+        </div>
+      )}
 
-          {/* Team member: show existing teams as buttons */}
-          {role === 'team_member' && existingTeams.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
+      {/* Team Member — buttons only, no free text */}
+      {role === 'team_member' && (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold uppercase tracking-widest text-yellow-400">
+            Your Team
+          </label>
+          {teamsLoading ? (
+            <p className="text-sm text-white/40 animate-pulse">Looking for teams...</p>
+          ) : existingTeams.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
               {existingTeams.map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setTeamName(t)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
+                  className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
                     teamName === t
                       ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
                       : 'border-white/10 bg-white/5 text-white/70 hover:border-white/30'
@@ -233,17 +266,13 @@ export default function JoinForm() {
                 </button>
               ))}
             </div>
+          ) : gameCode.trim().length >= 4 ? (
+            <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/40">
+              No teams found — ask your Team Leader to join first.
+            </p>
+          ) : (
+            <p className="text-sm text-white/40">Enter your game code above to see available teams.</p>
           )}
-
-          <input
-            type="text"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            placeholder={role === 'team_member' ? 'Or type team name manually' : 'e.g. Team Chaos'}
-            maxLength={30}
-            autoComplete="off"
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-lg text-white placeholder:text-white/20 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
-          />
         </div>
       )}
 
@@ -257,7 +286,7 @@ export default function JoinForm() {
       {/* Submit */}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || (role === 'team_member' && existingTeams.length === 0)}
         className="w-full rounded-xl bg-yellow-400 px-6 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Joining...' : 'Join Game →'}
