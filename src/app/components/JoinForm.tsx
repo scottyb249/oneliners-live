@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -38,8 +38,44 @@ export default function JoinForm() {
   const [gameCode, setGameCode] = useState('')
   const [playerName, setPlayerName] = useState('')
   const [role, setRole] = useState<Role | null>(null)
+  const [teamName, setTeamName] = useState('')
+  const [existingTeams, setExistingTeams] = useState<string[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Resume session if player already joined
+  useEffect(() => {
+    const savedCode = sessionStorage.getItem('one_game_code')
+    const savedGameId = sessionStorage.getItem('one_game_id')
+    const savedPlayerId = sessionStorage.getItem('one_player_id')
+    if (savedCode && savedGameId && savedPlayerId) {
+      setGameCode(savedCode)
+      router.replace(`/game/${savedGameId}?playerId=${savedPlayerId}`)
+    }
+  }, [router])
+
+  // When role changes to team_member, fetch existing teams for the entered game code
+  useEffect(() => {
+    if (role !== 'team_member' || !gameCode.trim()) return
+    async function fetchTeams() {
+      const { data: game } = await supabase
+        .from('games')
+        .select('id')
+        .ilike('code', gameCode.trim())
+        .single()
+      if (!game) return
+      const { data: leaders } = await supabase
+        .from('players')
+        .select('team_name')
+        .eq('game_id', game.id)
+        .eq('role', 'team_leader')
+        .not('team_name', 'is', null)
+      if (leaders) {
+        setExistingTeams(leaders.map((l) => l.team_name).filter(Boolean) as string[])
+      }
+    }
+    fetchTeams()
+  }, [role, gameCode])
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault()
@@ -47,6 +83,11 @@ export default function JoinForm() {
 
     if (!gameCode.trim() || !playerName.trim() || !role) {
       setError('Please fill in all fields and select a role.')
+      return
+    }
+
+    if ((role === 'team_leader' || role === 'team_member') && !teamName.trim()) {
+      setError('Please enter or select a team name.')
       return
     }
 
@@ -77,6 +118,7 @@ export default function JoinForm() {
           game_id: game.id,
           name: playerName.trim(),
           role,
+          team_name: (role === 'team_leader' || role === 'team_member') ? teamName.trim() : null,
           is_host: false,
         })
         .select('id')
@@ -88,12 +130,19 @@ export default function JoinForm() {
         return
       }
 
+      // Save session so back-arrow doesn't create a ghost player
+      sessionStorage.setItem('one_game_code', gameCode.trim())
+      sessionStorage.setItem('one_game_id', game.id)
+      sessionStorage.setItem('one_player_id', player.id)
+
       router.push(`/game/${game.id}?playerId=${player.id}`)
     } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }
+
+  const needsTeamName = role === 'team_leader' || role === 'team_member'
 
   return (
     <form onSubmit={handleJoin} className="w-full max-w-md space-y-6">
@@ -107,7 +156,7 @@ export default function JoinForm() {
           type="text"
           value={gameCode}
           onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-          placeholder="e.g. ABC123"
+          placeholder="e.g. ABCD"
           maxLength={8}
           autoComplete="off"
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-2xl font-bold uppercase tracking-[0.3em] text-white placeholder:text-white/20 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
@@ -141,7 +190,11 @@ export default function JoinForm() {
             <button
               key={r.value}
               type="button"
-              onClick={() => setRole(r.value)}
+              onClick={() => {
+                setRole(r.value)
+                setTeamName('')
+                setExistingTeams([])
+              }}
               className={`flex items-start gap-4 rounded-xl border px-4 py-3 text-left transition-all ${
                 role === r.value
                   ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-400/30'
@@ -157,6 +210,45 @@ export default function JoinForm() {
           ))}
         </div>
       </div>
+
+      {/* Team Name — shown for team_leader and team_member */}
+      {needsTeamName && (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold uppercase tracking-widest text-yellow-400">
+            {role === 'team_leader' ? 'Team Name' : 'Your Team'}
+          </label>
+
+          {/* Team member: show existing teams as buttons */}
+          {role === 'team_member' && existingTeams.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {existingTeams.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTeamName(t)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
+                    teamName === t
+                      ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
+                      : 'border-white/10 bg-white/5 text-white/70 hover:border-white/30'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <input
+            type="text"
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            placeholder={role === 'team_member' ? 'Or type team name manually' : 'e.g. Team Chaos'}
+            maxLength={30}
+            autoComplete="off"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-lg text-white placeholder:text-white/20 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
+          />
+        </div>
+      )}
 
       {/* Error */}
       {error && (
