@@ -44,13 +44,29 @@ export default function JoinForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Resume session if player already joined
+  // Resume session only if player record still exists in Supabase
   useEffect(() => {
     const savedGameId = localStorage.getItem('one_game_id')
     const savedPlayerId = localStorage.getItem('one_player_id')
-    if (savedGameId && savedPlayerId) {
-      router.replace(`/game/${savedGameId}?playerId=${savedPlayerId}`)
+    if (!savedGameId || !savedPlayerId) return
+
+    async function verifySession() {
+      const { data } = await supabase
+        .from('players')
+        .select('id')
+        .eq('id', savedPlayerId)
+        .maybeSingle()
+
+      if (data) {
+        // Player still exists in Supabase — resume game
+        router.replace(`/game/${savedGameId}?playerId=${savedPlayerId}`)
+      } else {
+        // Player was deleted (e.g. Back to Lobby) — clear stale session
+        localStorage.removeItem('one_game_id')
+        localStorage.removeItem('one_player_id')
+      }
     }
+    verifySession()
   }, [router])
 
   // When role is team_member and game code is entered, fetch existing teams
