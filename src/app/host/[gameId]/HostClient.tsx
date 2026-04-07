@@ -30,6 +30,8 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [playerCount, setPlayerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [showEndConfirm, setShowEndConfirm] = useState(false)
+  const [ending, setEnding] = useState(false)
 
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
@@ -75,10 +77,28 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
+  // Warn host if they try to navigate away mid-game
+  useEffect(() => {
+    if (!game || game.status === 'ended' || game.status === 'waiting') return
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [game])
+
   function openAcronymPicker(targetRound: number, isFinalRound: boolean) {
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
     setShowAcronymPicker(true)
+  }
+
+  async function handleEndGame() {
+    setEnding(true)
+    await supabase.from('games').update({ status: 'ended' }).eq('id', gameId)
+    setShowEndConfirm(false)
+    setEnding(false)
   }
 
   async function handleBackToLobby() {
@@ -150,7 +170,17 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     <main className="flex min-h-screen flex-col bg-zinc-950">
       <TopBar game={game} />
 
-      <div className="flex-1 px-4 py-6">
+      {/* End Game button — always visible */}
+      <div className="flex justify-end px-4 pt-3">
+        <button
+          onClick={() => setShowEndConfirm(true)}
+          className="rounded-lg border border-red-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-red-400 hover:border-red-400 hover:text-red-300 transition-all"
+        >
+          End Game
+        </button>
+      </div>
+
+      <div className="flex-1 px-4 py-4">
         {showAcronymPicker ? (
           <AcronymPicker
             game={game}
@@ -191,6 +221,34 @@ export default function HostClient({ gameId: rawGameId }: Props) {
           </>
         )}
       </div>
+
+      {/* End Game confirmation modal */}
+      {showEndConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">
+            <p className="text-lg font-bold text-white">End the game?</p>
+            <p className="text-sm text-white/50">
+              This will end the game for all players and take everyone to the final screen.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowEndConfirm(false)}
+                disabled={ending}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEndGame}
+                disabled={ending}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 text-sm font-bold text-white hover:bg-red-400 transition-all disabled:opacity-50"
+              >
+                {ending ? 'Ending...' : 'End Game'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

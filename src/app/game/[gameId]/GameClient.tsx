@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Game, Player } from './types'
@@ -16,6 +16,8 @@ interface Props {
   playerId: string
 }
 
+const ABANDONMENT_MS = 5 * 60 * 1000 // 5 minutes
+
 export default function GameClient({ gameId, playerId }: Props) {
   const router = useRouter()
   const [game, setGame] = useState<Game | null>(null)
@@ -24,6 +26,10 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [loading, setLoading] = useState(true)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [showAbandonedBanner, setShowAbandonedBanner] = useState(false)
+
+  // Track last time the game status changed
+  const lastActivityRef = useRef<number>(Date.now())
 
   // Initial data load
   useEffect(() => {
@@ -49,7 +55,11 @@ export default function GameClient({ gameId, playerId }: Props) {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-        (payload) => setGame(payload.new as Game),
+        (payload) => {
+          setGame(payload.new as Game)
+          lastActivityRef.current = Date.now()
+          setShowAbandonedBanner(false)
+        },
       )
       .on(
         'postgres_changes',
@@ -61,11 +71,21 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
+  // Abandonment detection — check every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!game || game.status === 'ended' || game.status === 'waiting') return
+      const elapsed = Date.now() - lastActivityRef.current
+      if (elapsed >= ABANDONMENT_MS) {
+        setShowAbandonedBanner(true)
+      }
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [game])
+
   async function handleLeave() {
     setLeaving(true)
-    // Delete player record from Supabase
     await supabase.from('players').delete().eq('id', playerId)
-    // Clear localStorage session
     localStorage.removeItem('one_game_id')
     localStorage.removeItem('one_player_id')
     router.replace('/')
@@ -104,6 +124,19 @@ export default function GameClient({ gameId, playerId }: Props) {
           Leave Game
         </button>
       </div>
+
+      {/* Abandonment banner */}
+      {showAbandonedBanner && (
+        <div className="mb-6 w-full max-w-md rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-3 text-center">
+          <p className="text-sm font-semibold text-yellow-400">The game may have ended or the host left.</p>
+          <button
+            onClick={() => setShowLeaveConfirm(true)}
+            className="mt-2 text-xs font-bold uppercase tracking-widest text-yellow-400 underline underline-offset-2"
+          >
+            Leave Game
+          </button>
+        </div>
+      )}
 
       {game.status === 'waiting' && (
         <WaitingPhase game={game} player={player} playerCount={playerCount} />
