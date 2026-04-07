@@ -58,10 +58,8 @@ export default function JoinForm() {
         .maybeSingle()
 
       if (data) {
-        // Player still exists in Supabase — resume game
         router.replace(`/game/${savedGameId}?playerId=${savedPlayerId}`)
       } else {
-        // Player was deleted (e.g. Back to Lobby) — clear stale session
         localStorage.removeItem('one_game_id')
         localStorage.removeItem('one_player_id')
       }
@@ -143,24 +141,7 @@ export default function JoinForm() {
         return
       }
 
-      // Check if a player with this name already exists in this game
-      const { data: existingPlayer } = await supabase
-        .from('players')
-        .select('id')
-        .eq('game_id', game.id)
-        .ilike('name', playerName.trim())
-        .eq('is_host', false)
-        .maybeSingle()
-
-      if (existingPlayer) {
-        // Reuse the existing player record — don't create a duplicate
-        localStorage.setItem('one_game_id', game.id)
-        localStorage.setItem('one_player_id', existingPlayer.id)
-        router.push(`/game/${game.id}?playerId=${existingPlayer.id}`)
-        return
-      }
-
-      // No existing player — create a new one
+      // Always create a fresh player record
       const { data: player, error: playerError } = await supabase
         .from('players')
         .insert({
