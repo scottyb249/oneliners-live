@@ -28,6 +28,8 @@ export default function AcronymPicker({
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
 
+  const usedAcronyms: string[] = game.used_acronyms ?? []
+
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -54,6 +56,8 @@ export default function AcronymPicker({
     setConfirming(true)
     setError('')
 
+    const updatedUsed = [...usedAcronyms, selected.acronym]
+
     const { error: updateErr } = await supabase
       .from('games')
       .update({
@@ -62,6 +66,7 @@ export default function AcronymPicker({
         status: 'active',
         round_started_at: new Date().toISOString(),
         is_final_round: isFinalRound,
+        used_acronyms: updatedUsed,
       })
       .eq('id', game.id)
 
@@ -117,26 +122,40 @@ export default function AcronymPicker({
         </p>
       ) : (
         <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-          {filtered.map((prompt) => (
-            <button
-              key={prompt.id}
-              onClick={() => setSelected(prompt)}
-              className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
-                selected?.id === prompt.id
-                  ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-400/30'
-                  : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xl font-black tracking-widest text-white">{prompt.acronym}</p>
-                {prompt.theme && (
-                  <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/40">
-                    {prompt.theme}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
+          {filtered.map((prompt) => {
+            const alreadyUsed = usedAcronyms.includes(prompt.acronym)
+            const isSelected = selected?.id === prompt.id
+            return (
+              <button
+                key={prompt.id}
+                onClick={() => !alreadyUsed && setSelected(prompt)}
+                disabled={alreadyUsed}
+                className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                  alreadyUsed
+                    ? 'cursor-not-allowed border-white/5 bg-white/[0.02] opacity-40'
+                    : isSelected
+                    ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-400/30'
+                    : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xl font-black tracking-widest text-white">{prompt.acronym}</p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {alreadyUsed && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/40">
+                        used this game
+                      </span>
+                    )}
+                    {prompt.theme && !alreadyUsed && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/40">
+                        {prompt.theme}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
       )}
 

@@ -126,6 +126,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         current_acronym: null,
         is_final_round: false,
         is_tiebreaker_ran: false,
+        used_acronyms: [],
       })
       .eq('id', gameId)
   }
