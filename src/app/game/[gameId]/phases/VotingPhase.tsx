@@ -54,13 +54,20 @@ export default function VotingPhase({ game, player }: Props) {
 
   function isHidden(answer: Answer): boolean {
     if (player.role === 'crowd_voter') return false
-    if (player.role === 'individual') return answer.player_id === player.id
-    // team_leader / team_member: hide same team
-    const sameTeam =
-      !!player.team_name &&
-      !!answer.players?.team_name &&
-      answer.players.team_name === player.team_name
-    return sameTeam
+
+    // Always block voting for your own answer regardless of role
+    if (answer.player_id === player.id) return true
+
+    // team_leader / team_member: also hide same team's answers
+    if (player.role === 'team_leader' || player.role === 'team_member') {
+      const sameTeam =
+        !!player.team_name &&
+        !!answer.players?.team_name &&
+        answer.players.team_name === player.team_name
+      return sameTeam
+    }
+
+    return false
   }
 
   async function handleVote(answerId: string) {

@@ -45,11 +45,9 @@ export default function JoinForm() {
 
   // Resume session if player already joined
   useEffect(() => {
-    const savedCode = sessionStorage.getItem('one_game_code')
-    const savedGameId = sessionStorage.getItem('one_game_id')
-    const savedPlayerId = sessionStorage.getItem('one_player_id')
-    if (savedCode && savedGameId && savedPlayerId) {
-      setGameCode(savedCode)
+    const savedGameId = localStorage.getItem('one_game_id')
+    const savedPlayerId = localStorage.getItem('one_player_id')
+    if (savedGameId && savedPlayerId) {
       router.replace(`/game/${savedGameId}?playerId=${savedPlayerId}`)
     }
   }, [router])
@@ -130,10 +128,9 @@ export default function JoinForm() {
         return
       }
 
-      // Save session so back-arrow doesn't create a ghost player
-      sessionStorage.setItem('one_game_code', gameCode.trim())
-      sessionStorage.setItem('one_game_id', game.id)
-      sessionStorage.setItem('one_player_id', player.id)
+      // Save to localStorage so back-arrow doesn't create a ghost player
+      localStorage.setItem('one_game_id', game.id)
+      localStorage.setItem('one_player_id', player.id)
 
       router.push(`/game/${game.id}?playerId=${player.id}`)
     } catch {
