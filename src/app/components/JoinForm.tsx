@@ -108,6 +108,7 @@ export default function JoinForm() {
     setLoading(true)
 
     try {
+      // Look up the game
       const { data: game, error: gameError } = await supabase
         .from('games')
         .select('id, status')
@@ -126,6 +127,24 @@ export default function JoinForm() {
         return
       }
 
+      // Check if a player with this name already exists in this game
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('id')
+        .eq('game_id', game.id)
+        .ilike('name', playerName.trim())
+        .eq('is_host', false)
+        .maybeSingle()
+
+      if (existingPlayer) {
+        // Reuse the existing player record — don't create a duplicate
+        localStorage.setItem('one_game_id', game.id)
+        localStorage.setItem('one_player_id', existingPlayer.id)
+        router.push(`/game/${game.id}?playerId=${existingPlayer.id}`)
+        return
+      }
+
+      // No existing player — create a new one
       const { data: player, error: playerError } = await supabase
         .from('players')
         .insert({
@@ -153,8 +172,6 @@ export default function JoinForm() {
       setLoading(false)
     }
   }
-
-  const needsTeamName = role === 'team_leader' || role === 'team_member'
 
   return (
     <form onSubmit={handleJoin} className="w-full max-w-md space-y-6">

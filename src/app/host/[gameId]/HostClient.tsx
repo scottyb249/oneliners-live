@@ -102,8 +102,10 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }
 
   async function handleBackToLobby() {
+    // Delete all answers, votes, and non-host players so lobby starts completely fresh
     await supabase.from('answers').delete().eq('game_id', gameId)
     await supabase.from('votes').delete().eq('game_id', gameId)
+    await supabase.from('players').delete().eq('game_id', gameId).eq('is_host', false)
     await supabase
       .from('games')
       .update({

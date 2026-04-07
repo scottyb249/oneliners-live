@@ -35,14 +35,11 @@ export default function EndedPhase({ game, player }: Props) {
         .from('players')
         .select('id, name, role, team_name, score')
         .eq('game_id', game.id)
+        .neq('role', 'team_member')
+        .neq('role', 'crowd_voter')
         .order('score', { ascending: false })
 
-      if (data) {
-        // Filter out team members and crowd voters — they don't score
-        setLeaderboard(
-          data.filter((p) => p.role !== 'team_member' && p.role !== 'crowd_voter')
-        )
-      }
+      if (data) setLeaderboard(data)
       setLoading(false)
     }
     load()
