@@ -36,6 +36,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
+  const [pickerIsTiebreaker, setPickerIsTiebreaker] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -101,9 +102,10 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [game])
 
-  function openAcronymPicker(targetRound: number, isFinalRound: boolean) {
+  function openAcronymPicker(targetRound: number, isFinalRound: boolean, isTiebreaker = false) {
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
+    setPickerIsTiebreaker(isTiebreaker)
     setShowAcronymPicker(true)
   }
 
@@ -202,6 +204,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             game={game}
             targetRound={pickerTargetRound}
             isFinalRound={pickerIsFinalRound}
+            isTiebreaker={pickerIsTiebreaker}
             letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
@@ -229,6 +232,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                   await supabase.from('games').update({ status: 'waiting' }).eq('id', game.id)
                 }}
                 onFinalRound={() => openAcronymPicker(game.current_round + 1, true)}
+                onRunTiebreaker={() => openAcronymPicker(game.current_round, true, true)}
               />
             )}
             {game.status === 'tiebreaker' && (

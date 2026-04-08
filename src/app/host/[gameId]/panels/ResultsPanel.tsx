@@ -9,6 +9,7 @@ interface Props {
   onNextRound: () => void
   onTakeBreak: () => void
   onFinalRound: () => void
+  onRunTiebreaker: (tiedPlayerIds: string[]) => void
 }
 
 interface AnswerWithVotes extends Answer {
@@ -24,7 +25,7 @@ interface LeaderboardEntry {
   is_tiebreaker_participant: boolean
 }
 
-export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound }: Props) {
+export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound, onRunTiebreaker }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -102,10 +103,8 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       ),
     )
 
-    await supabase
-      .from('games')
-      .update({ status: 'tiebreaker' })
-      .eq('id', game.id)
+    setActionLoading(false)
+    onRunTiebreaker(tiedPlayerIds)
   }
 
   async function endGame() {

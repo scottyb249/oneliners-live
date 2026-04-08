@@ -97,7 +97,7 @@ function TiebreakerVotingView({ game }: { game: Game }) {
       const [{ data: ans }, { data: votes }] = await Promise.all([
         supabase
           .from('answers')
-          .select('id, content')
+          .select('id, content, player_id')
           .eq('game_id', game.id)
           .eq('round', game.current_round)
           .eq('is_tiebreaker', true)

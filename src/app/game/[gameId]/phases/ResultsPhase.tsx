@@ -30,7 +30,7 @@ export default function ResultsPhase({ game, player }: Props) {
           .select('*, players(name, team_name)')
           .eq('game_id', game.id)
           .eq('approved', true)
-          .eq('is_tiebreaker', false)
+          .eq('is_tiebreaker', game.tiebreaker_ran)
           .eq('round', game.current_round),
         supabase
           .from('votes')
