@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Game, Player, Answer } from '@/lib/types'
 
 interface Props {
+  onRunTiebreaker: (tiedPlayerIds: string[]) => void
   game: Game
   onNextRound: () => void
   onTakeBreak: () => void
@@ -24,7 +25,7 @@ interface LeaderboardEntry {
   is_tiebreaker_participant: boolean
 }
 
-export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound }: Props) {
+export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound, onRunTiebreaker }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -102,17 +103,14 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       ),
     )
 
-    await supabase
-      .from('games')
-      .update({ status: 'tiebreaker' })
-      .eq('id', game.id)
+    setActionLoading(false)
+    onRunTiebreaker(tiedPlayerIds)
   }
 
   async function endGame() {
     if (actionLoading) return
     setActionLoading(true)
 
-    // Fetch current final_position so we don't overwrite tiebreaker results
     const { data: players } = await supabase
       .from('players')
       .select('id, score, final_position')
@@ -125,7 +123,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     let pos = 1
     for (let i = 0; i < list.length; i++) {
       if (i > 0 && list[i].score < list[i - 1].score) pos = i + 1
-      // Only assign if not already set by tiebreaker
       if (list[i].final_position == null) {
         await supabase
           .from('players')
