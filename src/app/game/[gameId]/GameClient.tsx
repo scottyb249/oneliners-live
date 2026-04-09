@@ -8,7 +8,6 @@ import WaitingPhase from './phases/WaitingPhase'
 import ActivePhase from './phases/ActivePhase'
 import VotingPhase from './phases/VotingPhase'
 import ResultsPhase from './phases/ResultsPhase'
-import TiebreakerPhase from './phases/TiebreakerPhase'
 import EndedPhase from './phases/EndedPhase'
 
 interface Props {
@@ -55,20 +54,11 @@ export default function GameClient({ gameId, playerId }: Props) {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-        async (payload) => {
+        (payload) => {
           const updatedGame = payload.new as Game
           setGame(updatedGame)
           lastActivityRef.current = Date.now()
           setShowAbandonedBanner(false)
-          // Re-fetch player when tiebreaker starts so is_tiebreaker_participant is fresh
-          if (updatedGame.status === 'tiebreaker') {
-            const { data: freshPlayer } = await supabase
-              .from('players')
-              .select('*')
-              .eq('id', playerId)
-              .single()
-            if (freshPlayer) setPlayer(freshPlayer as Player)
-          }
         },
       )
       .on(
@@ -154,7 +144,6 @@ export default function GameClient({ gameId, playerId }: Props) {
       {game.status === 'active' && <ActivePhase game={game} player={player} />}
       {game.status === 'voting' && <VotingPhase game={game} player={player} />}
       {game.status === 'results' && <ResultsPhase game={game} player={player} />}
-      {game.status === 'tiebreaker' && <TiebreakerPhase game={game} player={player} />}
       {game.status === 'ended' && <EndedPhase game={game} player={player} />}
 
       {/* Leave confirmation modal */}

@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import type { Game, Player, Answer } from '@/lib/types'
 
 interface Props {
-  onRunTiebreaker: (tiedPlayerIds: string[]) => void
   game: Game
   onNextRound: () => void
   onTakeBreak: () => void
@@ -25,11 +24,18 @@ interface LeaderboardEntry {
   is_tiebreaker_participant: boolean
 }
 
-export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound, onRunTiebreaker }: Props) {
+interface ResolvedTie {
+  position: number
+  players: { name: string; team_name: string | null; role: string }[]
+}
+
+export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [resolvedTies, setResolvedTies] = useState<ResolvedTie[]>([])
+  const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -39,7 +45,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           .select('*, players(name, team_name)')
           .eq('game_id', game.id)
           .eq('approved', true)
-          .eq('is_tiebreaker', game.tiebreaker_ran)
+          .eq('is_tiebreaker', false)
           .eq('round', game.current_round),
         supabase
           .from('votes')
@@ -69,10 +75,20 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       setLoading(false)
     }
     load()
-  }, [game.id, game.current_round, game.tiebreaker_ran])
+  }, [game.id, game.current_round])
 
-  // --- Tie detection (only for final round, pre-tiebreaker) ---
-  function getTiedPositions(): { position: number; players: LeaderboardEntry[] }[] {
+  // Auto-resolve ties by speed once leaderboard loads (final round only)
+  useEffect(() => {
+    if (!game.is_final_round || loading || speedResolutionDone) return
+    if (game.tiebreaker_ran) {
+      // Already resolved in a previous load
+      setSpeedResolutionDone(true)
+      return
+    }
+    resolveBySpeed()
+  }, [loading, game.is_final_round, game.tiebreaker_ran])
+
+  function getTiedGroups(): { position: number; players: LeaderboardEntry[] }[] {
     const ties: { position: number; players: LeaderboardEntry[] }[] = []
     let rank = 1
     let i = 0
@@ -89,22 +105,58 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     return ties
   }
 
-  async function runTiebreaker(tiedPlayerIds: string[]) {
-    if (actionLoading) return
-    setActionLoading(true)
-    const allPlayerIds = leaderboard.map((p) => p.id)
+  async function resolveBySpeed() {
+    const tiedGroups = getTiedGroups()
+    if (tiedGroups.length === 0) {
+      setSpeedResolutionDone(true)
+      return
+    }
 
-    await Promise.all(
-      allPlayerIds.map((id) =>
-        supabase
+    const resolved: ResolvedTie[] = []
+
+    for (const group of tiedGroups) {
+      const tiedIds = group.players.map((p) => p.id)
+
+      // Fetch KRACRONYM answers for tied players (round = current_round, is_tiebreaker = false)
+      const { data: answers } = await supabase
+        .from('answers')
+        .select('player_id, submitted_at')
+        .eq('game_id', game.id)
+        .eq('round', game.current_round)
+        .eq('is_tiebreaker', false)
+        .in('player_id', tiedIds)
+
+      // Sort by submitted_at ascending (fastest first); random tiebreak if same second
+      const sorted = (answers ?? []).slice().sort((a, b) => {
+        const diff = new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime()
+        if (diff !== 0) return diff
+        return Math.random() - 0.5
+      })
+
+      // Assign final_position in speed order
+      for (let i = 0; i < sorted.length; i++) {
+        await supabase
           .from('players')
-          .update({ is_tiebreaker_participant: tiedPlayerIds.includes(id) })
-          .eq('id', id),
-      ),
-    )
+          .update({ final_position: group.position + i })
+          .eq('id', sorted[i].player_id)
+      }
 
-    setActionLoading(false)
-    onRunTiebreaker(tiedPlayerIds)
+      // Record resolved tie for display (in speed-sorted order)
+      const sortedPlayers = sorted.map(
+        (a) => group.players.find((p) => p.id === a.player_id)!
+      ).filter(Boolean)
+
+      resolved.push({ position: group.position, players: sortedPlayers })
+    }
+
+    // Mark tiebreaker_ran so endGame skips re-assigning their positions
+    await supabase
+      .from('games')
+      .update({ tiebreaker_ran: true })
+      .eq('id', game.id)
+
+    setResolvedTies(resolved)
+    setSpeedResolutionDone(true)
   }
 
   async function endGame() {
@@ -139,10 +191,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   }
 
   const isFinalResults = game.is_final_round
-  const tiebreakerAlreadyRan = game.tiebreaker_ran
-  const tiedPositions = isFinalResults && !tiebreakerAlreadyRan ? getTiedPositions() : []
-  const hasTies = tiedPositions.length > 0
-  const allTiedPlayerIds = tiedPositions.flatMap((t) => t.players.map((p) => p.id))
 
   return (
     <div className="flex flex-col gap-6">
@@ -195,49 +243,35 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         })}
       </div>
 
-      {/* --- Post-KRACRONYM: tie detection & end game --- */}
+      {/* Speed resolution notice */}
+      {isFinalResults && resolvedTies.length > 0 && (
+        <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 px-4 py-4 space-y-2">
+          <p className="text-sm font-semibold text-blue-400">⚡ Tie broken by submission speed</p>
+          {resolvedTies.map(({ position, players }) => (
+            <p key={position} className="text-sm text-white">
+              <span className="font-bold text-white/60">#{position}:</span>{' '}
+              {players.map((p) =>
+                p.role === 'team_leader' && p.team_name ? p.team_name : p.name
+              ).join(' → ')}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* No ties notice */}
+      {isFinalResults && speedResolutionDone && resolvedTies.length === 0 && (
+        <p className="text-center text-sm text-green-400">No ties — clear winner!</p>
+      )}
+
+      {/* Action buttons */}
       {isFinalResults ? (
-        tiebreakerAlreadyRan ? (
-          <button
-            onClick={endGame}
-            disabled={actionLoading}
-            className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading ? 'Ending...' : 'End Game →'}
-          </button>
-        ) : (
-          <div className="space-y-4">
-            {hasTies ? (
-              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-4 space-y-3">
-                <p className="text-sm font-semibold text-red-400">Ties detected!</p>
-                {tiedPositions.map(({ position, players }) => (
-                  <p key={position} className="text-sm text-white">
-                    <span className="font-bold text-white/60">#{position}:</span>{' '}
-                    {players.map((p) =>
-                      p.role === 'team_leader' && p.team_name ? p.team_name : p.name
-                    ).join(' vs ')}
-                  </p>
-                ))}
-                <button
-                  onClick={() => runTiebreaker(allTiedPlayerIds)}
-                  disabled={actionLoading}
-                  className="w-full rounded-xl bg-red-500 py-3 font-bold text-white transition-all hover:bg-red-400 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? 'Setting up...' : 'Run Tiebreaker ⚡'}
-                </button>
-              </div>
-            ) : (
-              <p className="text-center text-sm text-green-400">No ties — clear winner!</p>
-            )}
-            <button
-              onClick={endGame}
-              disabled={actionLoading}
-              className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? 'Ending...' : 'End Game →'}
-            </button>
-          </div>
-        )
+        <button
+          onClick={endGame}
+          disabled={actionLoading || !speedResolutionDone}
+          className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {actionLoading ? 'Ending...' : !speedResolutionDone ? 'Resolving...' : 'End Game →'}
+        </button>
       ) : (
         <div className="space-y-3">
           <button

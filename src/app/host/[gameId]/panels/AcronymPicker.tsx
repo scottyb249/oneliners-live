@@ -8,7 +8,6 @@ interface Props {
   game: Game
   targetRound: number
   isFinalRound: boolean
-  isTiebreaker?: boolean
   letterCount: number
   onCancel: () => void
   onConfirmed: () => void
@@ -18,7 +17,6 @@ export default function AcronymPicker({
   game,
   targetRound,
   isFinalRound,
-  isTiebreaker = false,
   letterCount,
   onCancel,
   onConfirmed,
@@ -65,7 +63,7 @@ export default function AcronymPicker({
       .update({
         current_acronym: selected.acronym,
         current_round: targetRound,
-        status: isTiebreaker ? 'tiebreaker' : 'active',
+        status: 'active',
         round_started_at: new Date().toISOString(),
         is_final_round: isFinalRound,
         used_acronyms: updatedUsed,
@@ -87,7 +85,7 @@ export default function AcronymPicker({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
-            {isTiebreaker ? '⚡ Tiebreaker' : isFinalRound ? '⚡ KRACRONYM — Final Round' : `Round ${targetRound}`}
+            {isFinalRound ? '⚡ KRACRONYM — Final Round' : `Round ${targetRound}`}
           </p>
           <p className="mt-1 text-lg font-bold text-white">{letterCount}-letter acronym</p>
         </div>

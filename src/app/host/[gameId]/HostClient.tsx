@@ -10,7 +10,6 @@ import AcronymPicker from './panels/AcronymPicker'
 import AnswerManagementPanel from './panels/AnswerManagementPanel'
 import VotingPanel from './panels/VotingPanel'
 import ResultsPanel from './panels/ResultsPanel'
-import TiebreakerPanel from './panels/TiebreakerPanel'
 
 const ROUND_PATTERN = [3, 4, 4, 5, 5]
 
@@ -36,7 +35,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
-  const [pickerIsTiebreaker, setPickerIsTiebreaker] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -102,10 +100,9 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [game])
 
-  function openAcronymPicker(targetRound: number, isFinalRound: boolean, isTiebreaker = false) {
+  function openAcronymPicker(targetRound: number, isFinalRound: boolean) {
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
-    setPickerIsTiebreaker(isTiebreaker)
     setShowAcronymPicker(true)
   }
 
@@ -128,7 +125,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         current_acronym: null,
         is_final_round: false,
         tiebreaker_ran: false,
-        tiebreaker_voting: false,
         used_acronyms: [],
       })
       .eq('id', gameId)
@@ -205,8 +201,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             game={game}
             targetRound={pickerTargetRound}
             isFinalRound={pickerIsFinalRound}
-            isTiebreaker={pickerIsTiebreaker}
-            letterCount={pickerIsTiebreaker ? 3 : getLetterCount(pickerTargetRound, pickerIsFinalRound)}
+            letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
           />
@@ -233,11 +228,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                   await supabase.from('games').update({ status: 'waiting' }).eq('id', game.id)
                 }}
                 onFinalRound={() => openAcronymPicker(game.current_round + 1, true)}
-                onRunTiebreaker={() => openAcronymPicker(game.current_round, true, true)}
               />
-            )}
-            {game.status === 'tiebreaker' && (
-              <TiebreakerPanel game={game} />
             )}
           </>
         )}
