@@ -22,7 +22,6 @@ export default function VotingPhase({ game, player }: Props) {
 
   useEffect(() => {
     async function load() {
-      // Check if already voted this round
       const { data: existingVote } = await supabase
         .from('votes')
         .select('id, answer_id')
@@ -54,19 +53,12 @@ export default function VotingPhase({ game, player }: Props) {
 
   function isHidden(answer: Answer): boolean {
     if (player.role === 'crowd_voter') return false
-
-    // Always block voting for your own answer regardless of role
     if (answer.player_id === player.id) return true
-
-    // team_leader / team_member: also hide same team's answers
     if (player.role === 'team_leader' || player.role === 'team_member') {
-      const sameTeam =
-        !!player.team_name &&
+      return !!player.team_name &&
         !!answer.players?.team_name &&
         answer.players.team_name === player.team_name
-      return sameTeam
     }
-
     return false
   }
 
@@ -96,14 +88,14 @@ export default function VotingPhase({ game, player }: Props) {
 
   if (loading) {
     return (
-      <div className="flex w-full max-w-md flex-col items-center gap-4">
+      <div className="flex w-full flex-col items-center gap-4">
         <p className="animate-pulse text-white/40">Loading answers...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
           Round {game.current_round} · Vote

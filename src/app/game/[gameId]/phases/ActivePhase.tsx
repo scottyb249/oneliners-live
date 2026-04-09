@@ -82,7 +82,7 @@ export default function ActivePhase({ game, player }: Props) {
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-8">
+    <div className="flex w-full flex-col gap-8">
       {/* Acronym display */}
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">

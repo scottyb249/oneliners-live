@@ -52,14 +52,14 @@ export default function EndedPhase({ game, player }: Props) {
 
   if (loading) {
     return (
-      <div className="flex w-full max-w-md flex-col items-center">
+      <div className="flex w-full flex-col items-center">
         <p className="animate-pulse text-white/40">Loading final results...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-8">
+    <div className="flex w-full flex-col gap-8">
       <div className="text-center">
         <p className="text-4xl">🎉</p>
         <p className="mt-2 text-sm font-semibold uppercase tracking-widest text-yellow-400">
@@ -68,7 +68,6 @@ export default function EndedPhase({ game, player }: Props) {
         <p className="mt-1 text-3xl font-black text-white">Final Leaderboard</p>
       </div>
 
-      {/* Scoring player finish position */}
       {!isNonScoring && myPosition > 0 && myEntry && (
         <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
           <p className="text-sm text-white/50">You finished</p>
@@ -81,7 +80,6 @@ export default function EndedPhase({ game, player }: Props) {
         </div>
       )}
 
-      {/* Team member acknowledgment */}
       {player.role === 'team_member' && (
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
           <p className="text-3xl">🤝</p>
@@ -90,7 +88,6 @@ export default function EndedPhase({ game, player }: Props) {
         </div>
       )}
 
-      {/* Crowd voter acknowledgment */}
       {player.role === 'crowd_voter' && (
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
           <p className="text-3xl">🗳️</p>
@@ -99,7 +96,6 @@ export default function EndedPhase({ game, player }: Props) {
         </div>
       )}
 
-      {/* Full leaderboard */}
       <div className="space-y-3">
         {leaderboard.map((entry, i) => {
           const isMe = entry.id === player.id

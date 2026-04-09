@@ -52,9 +52,7 @@ export default function ResultsPhase({ game, player }: Props) {
       setResults(withVotes)
 
       if (isTeamMember) {
-        const teamAnswer = withVotes.find(
-          (a) => a.players?.team_name === player.team_name
-        )
+        const teamAnswer = withVotes.find((a) => a.players?.team_name === player.team_name)
         setPointsEarned(teamAnswer?.vote_count ?? 0)
       } else if (!isCrowdVoter) {
         const myAnswer = withVotes.find((a) => a.player_id === player.id)
@@ -68,14 +66,14 @@ export default function ResultsPhase({ game, player }: Props) {
 
   if (loading) {
     return (
-      <div className="flex w-full max-w-md flex-col items-center">
+      <div className="flex w-full flex-col items-center">
         <p className="animate-pulse text-white/40">Tallying votes...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-8">
+    <div className="flex w-full flex-col gap-8">
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
           Round {game.current_round} · Results
@@ -83,7 +81,6 @@ export default function ResultsPhase({ game, player }: Props) {
         <p className="mt-1 text-2xl font-bold text-white">The votes are in</p>
       </div>
 
-      {/* Points card — crowd voters see a neutral version */}
       {isCrowdVoter ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
           <p className="text-3xl">🗳️</p>
@@ -100,7 +97,6 @@ export default function ResultsPhase({ game, player }: Props) {
         </div>
       )}
 
-      {/* Ranked answers */}
       <div className="space-y-3">
         {results.map((answer, i) => {
           const isOwnTeam = isTeamMember

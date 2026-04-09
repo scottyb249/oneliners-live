@@ -35,10 +35,8 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [showAbandonedBanner, setShowAbandonedBanner] = useState(false)
   const [staleMessage, setStaleMessage] = useState('')
 
-  // Track last time the game status changed
   const lastActivityRef = useRef<number>(Date.now())
 
-  // Initial data load
   useEffect(() => {
     async function init() {
       const [{ data: gameData }, { data: playerData }, { count }] = await Promise.all([
@@ -47,7 +45,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         supabase.from('players').select('*', { count: 'exact', head: true }).eq('game_id', gameId),
       ])
 
-      // Stale game check — clear localStorage and show message
       if (gameData && isStaleGame(gameData as Game)) {
         localStorage.removeItem('one_game_id')
         localStorage.removeItem('one_player_id')
@@ -60,7 +57,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         return
       }
 
-      // Player not found (e.g. cron already cleaned them up)
       if (!playerData) {
         localStorage.removeItem('one_game_id')
         localStorage.removeItem('one_player_id')
@@ -78,7 +74,6 @@ export default function GameClient({ gameId, playerId }: Props) {
     else setLoading(false)
   }, [gameId, playerId])
 
-  // Realtime: game updates + new player joins
   useEffect(() => {
     const channel = supabase
       .channel(`game-${gameId}`)
@@ -86,8 +81,7 @@ export default function GameClient({ gameId, playerId }: Props) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
         (payload) => {
-          const updatedGame = payload.new as Game
-          setGame(updatedGame)
+          setGame(payload.new as Game)
           lastActivityRef.current = Date.now()
           setShowAbandonedBanner(false)
         },
@@ -98,16 +92,13 @@ export default function GameClient({ gameId, playerId }: Props) {
         () => setPlayerCount((prev) => prev + 1),
       )
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
-  // Abandonment detection — check every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       if (!game || game.status === 'ended' || game.status === 'waiting') return
-      const elapsed = Date.now() - lastActivityRef.current
-      if (elapsed >= ABANDONMENT_MS) {
+      if (Date.now() - lastActivityRef.current >= ABANDONMENT_MS) {
         setShowAbandonedBanner(true)
       }
     }, 30_000)
@@ -124,16 +115,15 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   if (loading) {
     return (
-      <main className="flex min-h-full items-center justify-center bg-zinc-950">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950">
         <p className="animate-pulse text-white/40">Loading game...</p>
       </main>
     )
   }
 
-  // Stale game — show message and let user go home
   if (staleMessage) {
     return (
-      <main className="flex min-h-full flex-col items-center justify-center bg-zinc-950 px-4 gap-6 text-center">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4 gap-6 text-center">
         <p className="text-white/60">{staleMessage}</p>
         <button
           onClick={() => router.replace('/')}
@@ -147,7 +137,7 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   if (!game || !player) {
     return (
-      <main className="flex min-h-full items-center justify-center bg-zinc-950 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
         <div className="text-center">
           <p className="text-red-400 font-semibold">Could not load the game.</p>
           <p className="mt-1 text-sm text-white/30">Check your link and try again.</p>
@@ -157,9 +147,9 @@ export default function GameClient({ gameId, playerId }: Props) {
   }
 
   return (
-    <main className="flex min-h-full flex-col items-center bg-zinc-950 px-4 py-10">
-      {/* Persistent header with leave button */}
-      <div className="mb-8 flex w-full max-w-md items-center justify-between">
+    <main className="min-h-screen bg-zinc-950">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
         <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
           O.N.E. Liners Live
         </p>
@@ -173,24 +163,29 @@ export default function GameClient({ gameId, playerId }: Props) {
 
       {/* Abandonment banner */}
       {showAbandonedBanner && (
-        <div className="mb-6 w-full max-w-md rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-3 text-center">
-          <p className="text-sm font-semibold text-yellow-400">The game may have ended or the host left.</p>
-          <button
-            onClick={() => setShowLeaveConfirm(true)}
-            className="mt-2 text-xs font-bold uppercase tracking-widest text-yellow-400 underline underline-offset-2"
-          >
-            Leave Game
-          </button>
+        <div className="mx-auto max-w-2xl px-6 pt-4">
+          <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-3 text-center">
+            <p className="text-sm font-semibold text-yellow-400">The game may have ended or the host left.</p>
+            <button
+              onClick={() => setShowLeaveConfirm(true)}
+              className="mt-2 text-xs font-bold uppercase tracking-widest text-yellow-400 underline underline-offset-2"
+            >
+              Leave Game
+            </button>
+          </div>
         </div>
       )}
 
-      {game.status === 'waiting' && (
-        <WaitingPhase game={game} player={player} playerCount={playerCount} />
-      )}
-      {game.status === 'active' && <ActivePhase game={game} player={player} />}
-      {game.status === 'voting' && <VotingPhase game={game} player={player} />}
-      {game.status === 'results' && <ResultsPhase game={game} player={player} />}
-      {game.status === 'ended' && <EndedPhase game={game} player={player} />}
+      {/* Phase content — centered, max width, fills height */}
+      <div className="mx-auto w-full max-w-2xl px-6 py-8">
+        {game.status === 'waiting' && (
+          <WaitingPhase game={game} player={player} playerCount={playerCount} />
+        )}
+        {game.status === 'active' && <ActivePhase game={game} player={player} />}
+        {game.status === 'voting' && <VotingPhase game={game} player={player} />}
+        {game.status === 'results' && <ResultsPhase game={game} player={player} />}
+        {game.status === 'ended' && <EndedPhase game={game} player={player} />}
+      </div>
 
       {/* Leave confirmation modal */}
       {showLeaveConfirm && (

@@ -22,7 +22,7 @@ interface Props {
 
 export default function WaitingPhase({ game, player, playerCount }: Props) {
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
+    <div className="flex w-full flex-col items-center gap-8 text-center">
       {/* Game code */}
       <div>
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">Game Code</p>
