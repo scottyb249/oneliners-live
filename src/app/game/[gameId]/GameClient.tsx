@@ -16,6 +16,13 @@ interface Props {
 }
 
 const ABANDONMENT_MS = 5 * 60 * 1000 // 5 minutes
+const STALE_HOURS = 12
+
+function isStaleGame(game: Game): boolean {
+  if (game.status === 'ended') return true
+  const created = new Date(game.created_at).getTime()
+  return Date.now() - created > STALE_HOURS * 60 * 60 * 1000
+}
 
 export default function GameClient({ gameId, playerId }: Props) {
   const router = useRouter()
@@ -26,6 +33,7 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [showAbandonedBanner, setShowAbandonedBanner] = useState(false)
+  const [staleMessage, setStaleMessage] = useState('')
 
   // Track last time the game status changed
   const lastActivityRef = useRef<number>(Date.now())
@@ -38,6 +46,29 @@ export default function GameClient({ gameId, playerId }: Props) {
         supabase.from('players').select('*').eq('id', playerId).single(),
         supabase.from('players').select('*', { count: 'exact', head: true }).eq('game_id', gameId),
       ])
+
+      // Stale game check — clear localStorage and show message
+      if (gameData && isStaleGame(gameData as Game)) {
+        localStorage.removeItem('one_game_id')
+        localStorage.removeItem('one_player_id')
+        setStaleMessage(
+          (gameData as Game).status === 'ended'
+            ? 'That game has already ended.'
+            : 'That game is no longer active.'
+        )
+        setLoading(false)
+        return
+      }
+
+      // Player not found (e.g. cron already cleaned them up)
+      if (!playerData) {
+        localStorage.removeItem('one_game_id')
+        localStorage.removeItem('one_player_id')
+        setStaleMessage('Your session has expired.')
+        setLoading(false)
+        return
+      }
+
       if (gameData) setGame(gameData as Game)
       if (playerData) setPlayer(playerData as Player)
       setPlayerCount(count ?? 0)
@@ -95,6 +126,21 @@ export default function GameClient({ gameId, playerId }: Props) {
     return (
       <main className="flex min-h-full items-center justify-center bg-zinc-950">
         <p className="animate-pulse text-white/40">Loading game...</p>
+      </main>
+    )
+  }
+
+  // Stale game — show message and let user go home
+  if (staleMessage) {
+    return (
+      <main className="flex min-h-full flex-col items-center justify-center bg-zinc-950 px-4 gap-6 text-center">
+        <p className="text-white/60">{staleMessage}</p>
+        <button
+          onClick={() => router.replace('/')}
+          className="rounded-xl bg-yellow-400 px-6 py-3 font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+        >
+          Back to Home
+        </button>
       </main>
     )
   }
