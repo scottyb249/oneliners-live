@@ -8,7 +8,6 @@ import WaitingView from './views/WaitingView'
 import ActiveView from './views/ActiveView'
 import VotingView from './views/VotingView'
 import ResultsView from './views/ResultsView'
-import TiebreakerView from './views/TiebreakerView'
 import EndedView from './views/EndedView'
 
 interface Props {
@@ -61,7 +60,6 @@ export default function DisplayClient({ gameId }: Props) {
         { event: 'INSERT', schema: 'public', table: 'answers', filter: `game_id=eq.${gameId}` },
         (payload) => {
           const incoming = payload.new as { round: number }
-          // Only count for the current round (game ref may be stale; use functional update pattern)
           setGame((prev) => {
             if (prev && incoming.round === prev.current_round) {
               setAnswerCount((c) => c + 1)
@@ -97,7 +95,6 @@ export default function DisplayClient({ gameId }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
-      {/* Main content */}
       <div className="flex flex-1 flex-col">
         {game.status === 'waiting' && <WaitingView game={game} />}
         {game.status === 'active' && (
@@ -105,13 +102,9 @@ export default function DisplayClient({ gameId }: Props) {
         )}
         {game.status === 'voting' && <VotingView game={game} />}
         {game.status === 'results' && <ResultsView game={game} />}
-        {game.status === 'tiebreaker' && (
-          <TiebreakerView game={game} answerCount={answerCount} />
-        )}
         {game.status === 'ended' && <EndedView game={game} />}
       </div>
 
-      {/* Persistent bottom bar */}
       <BottomBar game={game} />
     </div>
   )
