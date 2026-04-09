@@ -11,6 +11,7 @@ export interface Game {
   round_started_at: string | null
   is_final_round: boolean
   tiebreaker_ran: boolean
+  tiebreaker_voting: boolean
   used_acronyms: string[]
   created_at: string
 }

@@ -34,6 +34,14 @@ export default function TiebreakerPhase({ game, player }: Props) {
     setSubPhase('voting')
   }, [])
 
+  // Switch to voting when host triggers it via DB
+  useEffect(() => {
+    if (game.tiebreaker_voting && subPhase === 'submitting') {
+      setInputLocked(true)
+      setSubPhase('voting')
+    }
+  }, [game.tiebreaker_voting, subPhase])
+
   const handleVoteExpire = useCallback(() => setVoteLocked(true), [])
 
   // Load tiebreaker answers when voting starts
@@ -48,6 +56,7 @@ export default function TiebreakerPhase({ game, player }: Props) {
         .eq('game_id', game.id)
         .eq('voter_id', player.id)
         .eq('round', game.current_round)
+        .eq('is_tiebreaker', true)
         .maybeSingle()
 
       if (existingVote) {
@@ -117,6 +126,7 @@ export default function TiebreakerPhase({ game, player }: Props) {
       voter_id: player.id,
       answer_id: answerId,
       round: game.current_round,
+      is_tiebreaker: true,
     })
 
     if (voteError) {

@@ -16,6 +16,10 @@ export default function TiebreakerPanel({ game }: Props) {
   const handleSubmitExpire = useCallback(() => setPhase('voting'), [])
 
   useEffect(() => {
+    if (game.tiebreaker_voting) setPhase('voting')
+  }, [game.tiebreaker_voting])
+
+  useEffect(() => {
     async function loadCount() {
       const { count } = await supabase
         .from('answers')
@@ -62,7 +66,9 @@ export default function TiebreakerPanel({ game }: Props) {
             Players are submitting their tiebreaker answers...
           </p>
           <button
-            onClick={() => setPhase('voting')}
+            onClick={async () => {
+              await supabase.from('games').update({ tiebreaker_voting: true }).eq('id', game.id)
+            }}
             className="w-full rounded-xl border border-white/20 py-3 font-semibold text-white/60 transition-all hover:bg-white/10"
           >
             Skip to Voting →
@@ -143,49 +149,25 @@ function TiebreakerVotingView({ game }: { game: Game }) {
     if (ending) return
     setEnding(true)
 
-    // Rank tied players by tiebreaker vote count (descending)
-    const sorted = [...answers].sort(
-      (a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0),
-    )
-
-    // Find what position the tied group occupies by checking all players' scores
-    const { data: allPlayers } = await supabase
-      .from('players')
-      .select('id, score, is_tiebreaker_participant')
-      .eq('game_id', game.id)
-      .neq('role', 'team_member')
-      .neq('role', 'crowd_voter')
-      .order('score', { ascending: false })
-
-    // The tied group's position = how many non-tied players have a higher score + 1
-    const tiedScore = allPlayers?.find(
-      (p) => p.is_tiebreaker_participant
-    )?.score ?? 0
-
-    const playersAbove = (allPlayers ?? []).filter(
-      (p) => !p.is_tiebreaker_participant && p.score > tiedScore
-    ).length
-
-    const startPosition = playersAbove + 1
-
-    // Assign final_position within the tied band based on tiebreaker vote rank
-    let pos = startPosition
-    for (let i = 0; i < sorted.length; i++) {
-      const playerId = (sorted[i] as typeof sorted[0] & { player_id?: string }).player_id
-      if (!playerId) continue
-      // If tied on tiebreaker votes too, share the position
-      if (i > 0 && (voteCounts[sorted[i].id] ?? 0) < (voteCounts[sorted[i - 1].id] ?? 0)) {
-        pos = startPosition + i
-      }
-      await supabase
-        .from('players')
-        .update({ final_position: pos })
-        .eq('id', playerId)
+    // Score tiebreaker answers (double points as it's final round)
+    const pointsPerPlayer: Record<string, number> = {}
+    for (const answer of answers) {
+      const pts = voteCounts[answer.id] ?? 0
+      pointsPerPlayer[(answer as { id: string; content: string; player_id?: string }).player_id ?? ''] =
+        (pointsPerPlayer[(answer as { id: string; content: string; player_id?: string }).player_id ?? ''] ?? 0) + pts * 2
     }
+
+    await Promise.all(
+      Object.entries(pointsPerPlayer)
+        .filter(([id, amt]) => id && amt > 0)
+        .map(([id, amt]) =>
+          supabase.rpc('increment_score', { p_player_id: id, p_amount: amt }),
+        ),
+    )
 
     await supabase
       .from('games')
-      .update({ status: 'results', tiebreaker_ran: true })
+      .update({ status: 'results', tiebreaker_ran: true, tiebreaker_voting: false })
       .eq('id', game.id)
   }
 
