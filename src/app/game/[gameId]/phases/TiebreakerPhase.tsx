@@ -83,7 +83,7 @@ export default function TiebreakerPhase({ game, player }: Props) {
       round: game.current_round,
       content: answer.trim(),
       submitted_at: new Date().toISOString(),
-      approved: false,
+      approved: true,
       is_tiebreaker: true,
     })
 
