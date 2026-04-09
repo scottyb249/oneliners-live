@@ -55,10 +55,20 @@ export default function GameClient({ gameId, playerId }: Props) {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-        (payload) => {
-          setGame(payload.new as Game)
+        async (payload) => {
+          const updatedGame = payload.new as Game
+          setGame(updatedGame)
           lastActivityRef.current = Date.now()
           setShowAbandonedBanner(false)
+          // Re-fetch player when tiebreaker starts so is_tiebreaker_participant is fresh
+          if (updatedGame.status === 'tiebreaker') {
+            const { data: freshPlayer } = await supabase
+              .from('players')
+              .select('*')
+              .eq('id', playerId)
+              .single()
+            if (freshPlayer) setPlayer(freshPlayer as Player)
+          }
         },
       )
       .on(

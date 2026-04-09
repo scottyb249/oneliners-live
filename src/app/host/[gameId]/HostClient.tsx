@@ -127,7 +127,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         current_round: 1,
         current_acronym: null,
         is_final_round: false,
-        is_tiebreaker_ran: false,
+        tiebreaker_ran: false,
         used_acronyms: [],
       })
       .eq('id', gameId)
@@ -205,7 +205,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             targetRound={pickerTargetRound}
             isFinalRound={pickerIsFinalRound}
             isTiebreaker={pickerIsTiebreaker}
-            letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
+            letterCount={pickerIsTiebreaker ? 3 : getLetterCount(pickerTargetRound, pickerIsFinalRound)}
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
           />
