@@ -5,7 +5,6 @@ const STATUS_LABELS: Record<string, string> = {
   active: 'Submissions Open',
   voting: 'Voting',
   results: 'Results',
-  tiebreaker: 'Tiebreaker',
   ended: 'Game Over',
 }
 
@@ -14,7 +13,6 @@ const STATUS_COLORS: Record<string, string> = {
   active: 'bg-green-500/20 text-green-400',
   voting: 'bg-blue-500/20 text-blue-400',
   results: 'bg-yellow-500/20 text-yellow-400',
-  tiebreaker: 'bg-red-500/20 text-red-400',
   ended: 'bg-zinc-700 text-white/60',
 }
 

@@ -27,7 +27,7 @@ export default function ResultsView({ game }: Props) {
           .select('*, players(name, team_name)')
           .eq('game_id', game.id)
           .eq('approved', true)
-          .eq('is_tiebreaker', game.tiebreaker_ran)
+          .eq('is_tiebreaker', false)
           .eq('round', game.current_round),
         supabase
           .from('votes')
@@ -56,7 +56,7 @@ export default function ResultsView({ game }: Props) {
       setLoading(false)
     }
     load()
-  }, [game.id, game.current_round, game.tiebreaker_ran])
+  }, [game.id, game.current_round])
 
   if (loading) {
     return (

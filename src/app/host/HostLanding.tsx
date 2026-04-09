@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const HOST_PASSWORD = 'onel1ners'
+const HOST_PASSWORD = process.env.NEXT_PUBLIC_HOST_PASSWORD ?? ''
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 function generateCode(): string {
@@ -64,12 +64,12 @@ export default function HostLanding() {
           code,
           host_name: hostName.trim(),
           status: 'waiting',
-          round: 1,
+          current_round: 1,
           current_acronym: null,
           round_started_at: null,
           is_final_round: false,
-          is_tiebreaker_ran: false,
-          letter_pattern: [3, 4, 4, 5, 5],
+          tiebreaker_ran: false,
+          used_acronyms: [],
         })
         .select('id')
         .single()

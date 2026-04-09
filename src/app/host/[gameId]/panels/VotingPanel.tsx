@@ -15,8 +15,6 @@ export default function VotingPanel({ game }: Props) {
   const [ending, setEnding] = useState(false)
   const [timerExpired, setTimerExpired] = useState(false)
 
-  const isTiebreaker = game.status === 'tiebreaker'
-
   useEffect(() => {
     async function load() {
       const [{ data: ans }, { data: votes }] = await Promise.all([
@@ -25,7 +23,7 @@ export default function VotingPanel({ game }: Props) {
           .select('*')
           .eq('game_id', game.id)
           .eq('approved', true)
-          .eq('is_tiebreaker', isTiebreaker)
+          .eq('is_tiebreaker', false)
           .eq('round', game.current_round),
         supabase
           .from('votes')
@@ -44,7 +42,6 @@ export default function VotingPanel({ game }: Props) {
     }
     load()
 
-    // Subscribe to new votes
     const channel = supabase
       .channel(`votes-host-${game.id}-${game.current_round}`)
       .on(
@@ -63,7 +60,7 @@ export default function VotingPanel({ game }: Props) {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [game.id, game.current_round, isTiebreaker])
+  }, [game.id, game.current_round])
 
   const handleExpire = useCallback(() => setTimerExpired(true), [])
 
@@ -77,7 +74,6 @@ export default function VotingPanel({ game }: Props) {
     if (ending) return
     setEnding(true)
 
-    // Tally votes per player answer
     const pointsPerPlayer: Record<string, number> = {}
     for (const answer of answers) {
       const pts = voteCounts[answer.id] ?? 0
@@ -85,7 +81,6 @@ export default function VotingPanel({ game }: Props) {
       pointsPerPlayer[answer.player_id] = (pointsPerPlayer[answer.player_id] ?? 0) + pts * multiplier
     }
 
-    // Increment each player's score atomically
     await Promise.all(
       Object.entries(pointsPerPlayer).map(([playerId, amount]) =>
         amount > 0
@@ -94,18 +89,14 @@ export default function VotingPanel({ game }: Props) {
       ),
     )
 
-    // Transition to results
-    const updates: Partial<Game> = { status: 'results' }
-    if (isTiebreaker) updates.tiebreaker_ran = true
-
-    await supabase.from('games').update(updates).eq('id', game.id)
+    await supabase.from('games').update({ status: 'results' }).eq('id', game.id)
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
-          {isTiebreaker ? '⚡ Tiebreaker' : `Round ${game.current_round}`} · Voting
+          Round {game.current_round} · Voting
         </p>
         <p className="mt-1 text-white/40 text-sm">{totalVotes} votes cast</p>
       </div>
@@ -122,7 +113,6 @@ export default function VotingPanel({ game }: Props) {
         </p>
       )}
 
-      {/* Live vote counts */}
       <div className="space-y-2">
         {sorted.map((answer) => {
           const count = voteCounts[answer.id] ?? 0
