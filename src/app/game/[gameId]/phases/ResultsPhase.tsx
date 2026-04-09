@@ -20,7 +20,6 @@ export default function ResultsPhase({ game, player }: Props) {
 
   const isTeamMember = player.role === 'team_member'
   const isCrowdVoter = player.role === 'crowd_voter'
-  const isNonScoring = isTeamMember || isCrowdVoter
 
   useEffect(() => {
     async function load() {
@@ -30,7 +29,7 @@ export default function ResultsPhase({ game, player }: Props) {
           .select('*, players(name, team_name)')
           .eq('game_id', game.id)
           .eq('approved', true)
-          .eq('is_tiebreaker', game.tiebreaker_ran)
+          .eq('is_tiebreaker', false)
           .eq('round', game.current_round),
         supabase
           .from('votes')
