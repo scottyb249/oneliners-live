@@ -15,6 +15,7 @@ interface LeaderboardEntry {
   role: string
   team_name: string | null
   score: number
+  final_position: number | null
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -27,11 +28,11 @@ export default function EndedPhase({ game, player }: Props) {
     async function load() {
       const { data } = await supabase
         .from('players')
-        .select('id, name, role, team_name, score')
+        .select('id, name, role, team_name, score, final_position')
         .eq('game_id', game.id)
         .neq('role', 'team_member')
         .neq('role', 'crowd_voter')
-        .order('score', { ascending: false })
+        .order('final_position', { ascending: true, nullsFirst: false })
 
       if (data) setLeaderboard(data)
       setLoading(false)

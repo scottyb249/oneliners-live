@@ -9,7 +9,6 @@ interface Props {
   onNextRound: () => void
   onTakeBreak: () => void
   onFinalRound: () => void
-  onRunTiebreaker: (tiedPlayerIds: string[]) => void
 }
 
 interface AnswerWithVotes extends Answer {
@@ -25,7 +24,7 @@ interface LeaderboardEntry {
   is_tiebreaker_participant: boolean
 }
 
-export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound, onRunTiebreaker }: Props) {
+export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -103,21 +102,36 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       ),
     )
 
-    setActionLoading(false)
-    onRunTiebreaker(tiedPlayerIds)
+    await supabase
+      .from('games')
+      .update({ status: 'tiebreaker' })
+      .eq('id', game.id)
   }
 
   async function endGame() {
     if (actionLoading) return
     setActionLoading(true)
 
+    // Fetch current final_position so we don't overwrite tiebreaker results
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, score, final_position')
+      .eq('game_id', game.id)
+      .neq('role', 'team_member')
+      .neq('role', 'crowd_voter')
+      .order('score', { ascending: false })
+
+    const list = players ?? []
     let pos = 1
-    for (let i = 0; i < leaderboard.length; i++) {
-      if (i > 0 && leaderboard[i].score < leaderboard[i - 1].score) pos = i + 1
-      await supabase
-        .from('players')
-        .update({ final_position: pos })
-        .eq('id', leaderboard[i].id)
+    for (let i = 0; i < list.length; i++) {
+      if (i > 0 && list[i].score < list[i - 1].score) pos = i + 1
+      // Only assign if not already set by tiebreaker
+      if (list[i].final_position == null) {
+        await supabase
+          .from('players')
+          .update({ final_position: pos })
+          .eq('id', list[i].id)
+      }
     }
 
     await supabase.from('games').update({ status: 'ended' }).eq('id', game.id)
