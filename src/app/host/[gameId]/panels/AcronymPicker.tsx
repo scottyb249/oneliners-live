@@ -67,6 +67,8 @@ export default function AcronymPicker({
         round_started_at: new Date().toISOString(),
         is_final_round: isFinalRound,
         used_acronyms: updatedUsed,
+        reveal_index: -1,
+        podium_step: 0,
       })
       .eq('id', game.id)
 

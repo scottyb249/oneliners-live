@@ -29,6 +29,14 @@ interface ResolvedTie {
   players: { name: string; team_name: string | null; role: string }[]
 }
 
+const PODIUM_STEP_LABELS = [
+  'Showing KRACRONYM results',
+  'Revealing leaderboard (4th+)',
+  'Revealing 3rd place',
+  'Revealing 2nd place',
+  '1st place revealed — End Game when ready',
+]
+
 export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRound }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -38,7 +46,9 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
 
   const revealIndex = game.reveal_index ?? -1
+  const podiumStep = game.podium_step ?? 0
   const allRevealed = results.length > 0 && revealIndex >= results.length - 1
+  const isFinalResults = game.is_final_round
 
   useEffect(() => {
     async function load() {
@@ -80,7 +90,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     load()
   }, [game.id, game.current_round])
 
-  // Auto-resolve ties by speed once leaderboard loads (final round only)
   useEffect(() => {
     if (!game.is_final_round || loading || speedResolutionDone) return
     if (game.tiebreaker_ran) {
@@ -148,7 +157,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     }
 
     await supabase.from('games').update({ tiebreaker_ran: true }).eq('id', game.id)
-
     setResolvedTies(resolved)
     setSpeedResolutionDone(true)
   }
@@ -160,18 +168,16 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   }
 
   async function revealAllAnswers() {
-    await supabase
-      .from('games')
-      .update({ reveal_index: results.length - 1 })
-      .eq('id', game.id)
+    await supabase.from('games').update({ reveal_index: results.length - 1 }).eq('id', game.id)
   }
 
   async function resetReveal() {
     await supabase.from('games').update({ reveal_index: -1 }).eq('id', game.id)
   }
 
-  async function triggerVoting() {
-    await supabase.from('games').update({ status: 'voting' }).eq('id', game.id)
+  async function nextPodiumStep() {
+    const next = Math.min(podiumStep + 1, 4)
+    await supabase.from('games').update({ podium_step: next }).eq('id', game.id)
   }
 
   async function endGame() {
@@ -202,8 +208,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     return <p className="animate-pulse text-center text-white/40">Loading results...</p>
   }
 
-  const isFinalResults = game.is_final_round
-
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
@@ -227,7 +231,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
             disabled={allRevealed}
             className="flex-1 rounded-xl bg-yellow-400 py-2.5 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {allRevealed ? '✓ All Revealed' : `Reveal Next →`}
+            {allRevealed ? '✓ All Revealed' : 'Reveal Next →'}
           </button>
           {!allRevealed && (
             <button
@@ -314,21 +318,40 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         </div>
       )}
 
-      {/* No ties notice */}
-      {isFinalResults && speedResolutionDone && resolvedTies.length === 0 && (
-        <p className="text-center text-sm text-green-400">No ties — clear winner!</p>
+      {/* KRACRONYM podium reveal controls */}
+      {isFinalResults && (
+        <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 px-4 py-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
+              Podium Reveal
+            </p>
+            <p className="text-xs text-yellow-400/60">
+              Step {podiumStep + 1} / 5
+            </p>
+          </div>
+          <p className="text-xs text-white/50">{PODIUM_STEP_LABELS[podiumStep]}</p>
+          {podiumStep < 4 ? (
+            <button
+              onClick={nextPodiumStep}
+              disabled={!speedResolutionDone}
+              className="w-full rounded-xl bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {!speedResolutionDone ? 'Resolving ties...' : 'Next Reveal →'}
+            </button>
+          ) : (
+            <button
+              onClick={endGame}
+              disabled={actionLoading}
+              className="w-full rounded-xl bg-green-500 py-3 text-sm font-bold text-white transition-all hover:bg-green-400 active:scale-95 disabled:opacity-50"
+            >
+              {actionLoading ? 'Ending...' : '🎉 End Game & Show Podium →'}
+            </button>
+          )}
+        </div>
       )}
 
-      {/* Action buttons */}
-      {isFinalResults ? (
-        <button
-          onClick={endGame}
-          disabled={actionLoading || !speedResolutionDone}
-          className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {actionLoading ? 'Ending...' : !speedResolutionDone ? 'Resolving...' : 'End Game →'}
-        </button>
-      ) : (
+      {/* Non-final action buttons */}
+      {!isFinalResults && (
         <div className="space-y-3">
           <button
             onClick={onNextRound}
