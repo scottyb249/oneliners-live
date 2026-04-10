@@ -10,6 +10,7 @@ import AcronymPicker from './panels/AcronymPicker'
 import AnswerManagementPanel from './panels/AnswerManagementPanel'
 import VotingPanel from './panels/VotingPanel'
 import ResultsPanel from './panels/ResultsPanel'
+import BreakPanel from './panels/BreakPanel'
 
 const ROUND_PATTERN = [3, 4, 4, 5, 5]
 
@@ -126,6 +127,9 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         is_final_round: false,
         tiebreaker_ran: false,
         used_acronyms: [],
+        display_slide: 0,
+        reveal_index: -1,
+        podium_step: 0,
       })
       .eq('id', gameId)
   }
@@ -195,7 +199,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       </div>
 
       <div className="flex-1 px-4 py-4">
-        {/* Acronym picker takes priority over all phase panels */}
         {showAcronymPicker ? (
           <AcronymPicker
             game={game}
@@ -214,6 +217,12 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                 onStartGame={() => openAcronymPicker(game.current_round === 0 ? 1 : game.current_round + 1, false)}
               />
             )}
+            {game.status === 'break' && (
+              <BreakPanel
+                game={game}
+                onResume={() => openAcronymPicker(game.current_round + 1, game.is_final_round)}
+              />
+            )}
             {game.status === 'active' && (
               <AnswerManagementPanel game={game} />
             )}
@@ -225,7 +234,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                 game={game}
                 onNextRound={() => openAcronymPicker(game.current_round + 1, false)}
                 onTakeBreak={async () => {
-                  await supabase.from('games').update({ status: 'waiting' }).eq('id', game.id)
+                  await supabase.from('games').update({ status: 'break' }).eq('id', game.id)
                 }}
                 onFinalRound={() => openAcronymPicker(game.current_round + 1, true)}
               />

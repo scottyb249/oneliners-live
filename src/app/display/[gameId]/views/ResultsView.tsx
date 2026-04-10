@@ -97,9 +97,9 @@ export default function ResultsView({ game }: Props) {
   }
 
   return (
-    <div className="flex flex-1 gap-8 px-10 py-6 overflow-hidden">
-      {/* Left: ranked answers */}
-      <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+    <div className="flex flex-1 gap-6 px-8 py-6 overflow-hidden">
+      {/* Left: ranked answers — slightly more space */}
+      <div className="flex flex-[3] flex-col gap-4 overflow-hidden">
         <p
           className="font-semibold uppercase tracking-[0.4em] text-yellow-400 shrink-0"
           style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
@@ -165,15 +165,15 @@ export default function ResultsView({ game }: Props) {
         </div>
       </div>
 
-      {/* Right: leaderboard */}
-      <div className="w-72 flex-shrink-0 flex flex-col gap-4">
+      {/* Right: leaderboard — equal-ish space */}
+      <div className="flex-[2] flex-shrink-0 flex flex-col gap-4 overflow-hidden">
         <p
           className="font-semibold uppercase tracking-[0.4em] text-blue-400 shrink-0"
           style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
         >
           Leaderboard
         </p>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 overflow-auto">
           {leaderboard.map((player, i) => (
             <div
               key={player.id}

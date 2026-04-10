@@ -53,37 +53,28 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
       <div>
         <p
           className="font-black text-yellow-400 leading-none"
-          style={{ fontSize: 'clamp(1rem, 4vw, 3.5rem)' }}
+          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
         >
           O.N.E. Liners
         </p>
         <p
           className="font-black text-white leading-tight"
-          style={{ fontSize: 'clamp(3rem, 14vw, 12rem)' }}
+          style={{ fontSize: 'clamp(4rem, 16vw, 14rem)' }}
         >
           LIVE
-        </p>
-        <p
-          className="text-white/40 font-medium mt-2"
-          style={{ fontSize: 'clamp(0.875rem, 2vw, 1.5rem)' }}
-        >
-          The Interactive Word Game
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row items-center gap-10">
         {/* QR Code */}
         <div className="flex flex-col items-center gap-3">
-          <div className="rounded-2xl bg-white p-4">
-            <QRCodeSVG
-              value={joinUrl}
-              size={180}
-              bgColor="#ffffff"
-              fgColor="#09090b"
-              level="M"
-            />
+          <div className="rounded-2xl bg-white p-5">
+            <QRCodeSVG value={joinUrl} size={200} bgColor="#ffffff" fgColor="#09090b" level="M" />
           </div>
-          <p className="text-white/40" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1rem)' }}>
+          <p
+            className="text-white/70 font-semibold"
+            style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
+          >
             Scan to join
           </p>
         </div>
@@ -91,22 +82,22 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
         {/* Divider */}
         <div className="hidden lg:flex flex-col items-center gap-2">
           <div className="h-16 w-px bg-white/10" />
-          <p className="text-white/20 text-sm font-medium">or</p>
+          <p className="text-white/30 text-lg font-medium">or</p>
           <div className="h-16 w-px bg-white/10" />
         </div>
 
         {/* Join info */}
-        <div className="flex flex-col gap-4 text-left">
+        <div className="flex flex-col gap-5 text-left">
           <div>
             <p
-              className="text-white/40 font-medium"
-              style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)' }}
+              className="text-white/60 font-semibold uppercase tracking-widest"
+              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.2rem)' }}
             >
               Go to
             </p>
             <p
               className="font-black text-white"
-              style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
+              style={{ fontSize: 'clamp(1.5rem, 4vw, 3.5rem)' }}
             >
               onelinerslive.com
             </p>
@@ -114,36 +105,19 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
 
           <div>
             <p
-              className="text-white/40 font-medium"
-              style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)' }}
+              className="text-white/60 font-semibold uppercase tracking-widest"
+              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.2rem)' }}
             >
               Game Code
             </p>
             <p
               className="font-black tracking-[0.2em] text-yellow-400"
-              style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+              style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)' }}
             >
               {game.code}
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Play style bullets */}
-      <div className="flex flex-wrap justify-center gap-4">
-        {['🤝 Play as a Team', '🧑 Play Solo', '⚖️ Be a Judge!'].map((item) => (
-          <div
-            key={item}
-            className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-5 py-2"
-          >
-            <p
-              className="font-semibold text-yellow-400"
-              style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.25rem)' }}
-            >
-              {item}
-            </p>
-          </div>
-        ))}
       </div>
 
       {/* Player count */}
@@ -164,12 +138,26 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
 
 function HowToPlaySlide() {
   const steps = [
-    { icon: '📝', text: 'An acronym appears on screen — you have 60 seconds to write the funniest phrase using those letters.' },
-    { icon: '🎤', text: 'Submit your answer to the host. The host picks the top answers to read aloud.' },
-    { icon: '📱', text: 'Everyone votes for their favorite using their phone at onelinerslive.com.' },
-    { icon: '🏆', text: '1st place = 4 pts · 2nd = 3 pts · 3rd = 2 pts · 4th = 1 pt' },
-    { icon: '👾', text: 'The final KRACRONYM round is worth double — 16 / 8 / 4 / 2 points!' },
-    { icon: '🎁', text: 'Prizes for 1st, 2nd, and 3rd place at the end of the session.' },
+    {
+      icon: '📝',
+      text: 'An acronym appears on screen — you have 60 seconds to write the funniest phrase using those letters.',
+    },
+    {
+      icon: '📱',
+      text: 'Everyone is logged in on their phone as a Team, Team Member, or Judge. Each person will vote on their phone.',
+    },
+    {
+      icon: '🏆',
+      text: 'Each vote you receive will be a point. The final KRACRONYM round is worth Double Points!',
+    },
+    {
+      icon: '✅',
+      text: 'Submit your answer to the host. The host will approve the top 10 to vote on — inappropriate answers will be removed.',
+    },
+    {
+      icon: '🎁',
+      text: 'Prizes for 1st, 2nd, and 3rd place at the end of the session.',
+    },
   ]
 
   return (
@@ -177,28 +165,28 @@ function HowToPlaySlide() {
       <div className="text-center">
         <p
           className="font-black text-yellow-400 uppercase tracking-widest"
-          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+          style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
         >
           Quick Rules
         </p>
         <p
           className="font-black text-white mt-1"
-          style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+          style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)' }}
         >
           How to Play
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full max-w-5xl">
         {steps.map((step, i) => (
           <div
             key={i}
-            className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-4"
+            className="flex items-start gap-5 rounded-2xl border border-white/10 bg-white/5 px-7 py-5"
           >
-            <span style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}>{step.icon}</span>
+            <span style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)' }}>{step.icon}</span>
             <p
-              className="text-white/80 font-medium leading-snug"
-              style={{ fontSize: 'clamp(0.875rem, 1.6vw, 1.2rem)' }}
+              className="text-white font-semibold leading-snug"
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
             >
               {step.text}
             </p>
@@ -213,14 +201,14 @@ function HowToPlaySlide() {
 
 function RulesSlide() {
   const rules = [
-    'The host judges answers by cleverness, how well they fit the acronym, and how funny they are.',
-    'Teams — no devices to help you. That would be dumb. And so would you.',
+    'Host will narrow down answers to 10 if there are more than 10 players.',
+    'Do not use outside app help.',
     'Similar or identical answers? First one in wins. Be unique.',
     'The host sets the appropriateness level based on the crowd: G · PG · PG-13 · R · XXX.',
-    'Do not use your answer to harass a real person. Example: B.A.D. = "Bob\'s A D***" — not cool.',
-    'Keep highly inflammatory political or religious content out of it. This is a fun game. Host probably won\'t read it anyway.',
-    'Voters can come and go whenever. Players must vote every round.',
-    'Players and teams — do NOT vote for yourself. Don\'t be that person.',
+    'Do not use your answer to harass a real person. Example: B.A.D. = "Bob\'s A D***".',
+    'Keep highly inflammatory political or religious content out of it. Host will not approve it.',
+    'Players and Teams will not be able to vote for their own response. If you\'re playing, you need to vote.',
+    'Judges can come and go whenever they want and join anytime.',
   ]
 
   return (
@@ -228,33 +216,33 @@ function RulesSlide() {
       <div className="text-center">
         <p
           className="font-black text-yellow-400 uppercase tracking-widest"
-          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+          style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
         >
           Don&apos;t be a Jabronie
         </p>
         <p
           className="font-black text-white mt-1"
-          style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+          style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)' }}
         >
           The Rules
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 w-full max-w-4xl">
+      <div className="flex flex-col gap-3 w-full max-w-5xl">
         {rules.map((rule, i) => (
           <div
             key={i}
-            className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
+            className="flex items-start gap-5 rounded-xl border border-white/10 bg-white/5 px-6 py-4"
           >
             <span
               className="font-black text-yellow-400 shrink-0 tabular-nums"
-              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
             >
               {i + 1}.
             </span>
             <p
-              className="text-white/80 font-medium leading-snug"
-              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}
+              className="text-white font-semibold leading-snug"
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
             >
               {rule}
             </p>
@@ -273,7 +261,6 @@ function PledgeSlide() {
     'I will not personally harass or single out anyone in this room (unless they\'re on my team).',
     'I will do my best to not get offended and ruin a good time.',
     'The host is the moderator, tiebreaker, and judge of what\'s appropriate.',
-    'I will not steal this game idea — because Scott Babel will beat me up.',
   ]
 
   return (
@@ -281,27 +268,27 @@ function PledgeSlide() {
       <div>
         <p
           className="font-black text-yellow-400 uppercase tracking-widest"
-          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+          style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
         >
           Raise Your Right Hand &amp; Repeat After Me
         </p>
         <p
           className="font-black text-white mt-1"
-          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
+          style={{ fontSize: 'clamp(2.5rem, 6vw, 5.5rem)' }}
         >
           O.N.E. Liners Pledge ✋
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 w-full max-w-3xl">
+      <div className="flex flex-col gap-5 w-full max-w-3xl">
         {lines.map((line, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 px-6 py-4"
+            className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 px-8 py-5"
           >
             <p
               className="font-semibold text-white leading-snug"
-              style={{ fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
+              style={{ fontSize: 'clamp(1.1rem, 2.2vw, 1.75rem)' }}
             >
               &ldquo;{line}&rdquo;
             </p>

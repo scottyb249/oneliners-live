@@ -9,6 +9,7 @@ import ActiveView from './views/ActiveView'
 import VotingView from './views/VotingView'
 import ResultsView from './views/ResultsView'
 import EndedView from './views/EndedView'
+import BreakView from './views/BreakView'
 
 interface Props {
   gameId: string
@@ -97,6 +98,7 @@ export default function DisplayClient({ gameId }: Props) {
     <div className="flex min-h-screen flex-col bg-zinc-950">
       <div className="flex flex-1 flex-col">
         {game.status === 'waiting' && <WaitingView game={game} />}
+        {game.status === 'break' && <BreakView game={game} />}
         {game.status === 'active' && (
           <ActiveView game={game} answerCount={answerCount} />
         )}

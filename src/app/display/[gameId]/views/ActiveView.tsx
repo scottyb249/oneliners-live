@@ -8,7 +8,7 @@ interface Props {
 
 export default function ActiveView({ game, answerCount }: Props) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-10 px-12">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-12">
       {/* Round label */}
       <p
         className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
@@ -25,22 +25,22 @@ export default function ActiveView({ game, answerCount }: Props) {
         {game.current_acronym ?? '—'}
       </p>
 
-      {/* Timer */}
-      <div className="w-full max-w-3xl">
+      {/* Answer count */}
+      <p
+        className="font-bold text-white"
+        style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)' }}
+      >
+        {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
+      </p>
+
+      {/* Timer — smaller, below answer count */}
+      <div className="w-full max-w-xl">
         <BigCountdown
           key={`active-${game.current_round}`}
           totalSeconds={60}
           startedAt={game.round_started_at}
         />
       </div>
-
-      {/* Answer count */}
-      <p
-        className="font-semibold text-white/40"
-        style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
-      >
-        {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
-      </p>
     </div>
   )
 }

@@ -15,7 +15,7 @@ interface Props {
   playerId: string
 }
 
-const ABANDONMENT_MS = 5 * 60 * 1000 // 5 minutes
+const ABANDONMENT_MS = 5 * 60 * 1000
 const STALE_HOURS = 12
 
 function isStaleGame(game: Game): boolean {
@@ -97,7 +97,7 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!game || game.status === 'ended' || game.status === 'waiting') return
+      if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'break') return
       if (Date.now() - lastActivityRef.current >= ABANDONMENT_MS) {
         setShowAbandonedBanner(true)
       }
@@ -176,10 +176,25 @@ export default function GameClient({ gameId, playerId }: Props) {
         </div>
       )}
 
-      {/* Phase content — centered, max width, fills height */}
+      {/* Phase content */}
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         {game.status === 'waiting' && (
           <WaitingPhase game={game} player={player} playerCount={playerCount} />
+        )}
+        {/* Break — show a friendly hold screen */}
+        {game.status === 'break' && (
+          <div className="flex flex-col items-center gap-6 text-center py-12">
+            <p className="text-5xl">☕</p>
+            <p className="text-2xl font-black text-white">We&apos;ll Be Right Back!</p>
+            <p className="text-white/50 font-medium">
+              O.N.E. Liners Live is on a short break.<br />
+              Hang tight — the game will resume shortly.
+            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+              <p className="text-sm text-white/30">Waiting for host to resume...</p>
+            </div>
+          </div>
         )}
         {game.status === 'active' && <ActivePhase game={game} player={player} />}
         {game.status === 'voting' && <VotingPhase game={game} player={player} />}
@@ -192,7 +207,7 @@ export default function GameClient({ gameId, playerId }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">
             <p className="text-lg font-bold text-white">Leave the game?</p>
-            <p className="text-sm text-white/50">You'll be removed from the game and sent back to the join screen.</p>
+            <p className="text-sm text-white/50">You&apos;ll be removed from the game and sent back to the join screen.</p>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowLeaveConfirm(false)}

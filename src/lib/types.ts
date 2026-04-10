@@ -1,4 +1,4 @@
-export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended'
+export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break'
 export type PlayerRole = 'individual' | 'team_leader' | 'team_member' | 'crowd_voter'
 
 export interface Game {
@@ -15,6 +15,7 @@ export interface Game {
   created_at: string
   display_slide: number
   reveal_index: number
+  podium_step: number
 }
 
 export interface Player {

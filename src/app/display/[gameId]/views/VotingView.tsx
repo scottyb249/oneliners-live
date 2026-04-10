@@ -70,33 +70,33 @@ export default function VotingView({ game }: Props) {
   const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0)
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-10 py-6">
+    <div className="flex flex-1 flex-col gap-3 px-10 py-5">
       {/* Header row */}
-      <div className="flex items-end justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <p
             className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
-            style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
+            style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
           >
             Round {game.current_round} · Vote
           </p>
           <p
             className="font-black text-white leading-tight"
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 3.5rem)' }}
+            style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
           >
             Pick your favourite one-liner
           </p>
         </div>
         <p
-          className="font-semibold text-white/30 shrink-0"
-          style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
+          className="font-bold text-white shrink-0"
+          style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
         >
           {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} cast
         </p>
       </div>
 
-      {/* Timer */}
-      <div className="w-full">
+      {/* Timer — compact */}
+      <div className="w-full max-w-sm">
         <BigCountdown key={`voting-${game.current_round}`} totalSeconds={90} />
       </div>
 
@@ -104,30 +104,30 @@ export default function VotingView({ game }: Props) {
       {loading ? (
         <p className="animate-pulse text-center text-white/30">Loading answers...</p>
       ) : (
-        <div className="flex flex-1 flex-col justify-center gap-4">
+        <div className="flex flex-1 flex-col justify-center gap-2">
           {sorted.map((answer) => {
             const count = voteCounts[answer.id] ?? 0
             const pct = (count / maxVotes) * 100
             return (
               <div
                 key={answer.id}
-                className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-6 py-4"
+                className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-5 py-3"
               >
                 {/* Vote bar background */}
                 <div
-                  className="absolute inset-y-0 left-0 rounded-2xl bg-blue-500/10 transition-all duration-700"
+                  className="absolute inset-y-0 left-0 rounded-xl bg-blue-500/10 transition-all duration-700"
                   style={{ width: `${pct}%` }}
                 />
                 <div className="relative flex items-center justify-between gap-6">
                   <p
                     className="flex-1 font-semibold text-white leading-snug"
-                    style={{ fontSize: 'clamp(1rem, 2.2vw, 2rem)' }}
+                    style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
                   >
                     {answer.content}
                   </p>
                   <p
-                    className="shrink-0 font-black text-blue-400 tabular-nums"
-                    style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)' }}
+                    className="shrink-0 font-black text-white tabular-nums"
+                    style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)' }}
                   >
                     {count}
                   </p>
