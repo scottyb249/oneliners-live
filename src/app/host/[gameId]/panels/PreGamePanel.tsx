@@ -12,6 +12,8 @@ interface Props {
 export default function PreGamePanel({ game, playerCount, onStartGame }: Props) {
   const joinUrl = `https://onelinerslive.com/?code=${game.code}`
 
+  const hasStarted = game.current_round > 1 || !!game.current_acronym
+
   return (
     <div className="flex flex-col items-center gap-8 text-center">
       {/* Game code */}
@@ -45,7 +47,7 @@ export default function PreGamePanel({ game, playerCount, onStartGame }: Props) 
         onClick={onStartGame}
         className="w-full max-w-xs rounded-xl bg-yellow-400 px-6 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
       >
-        {game.current_round === 0 ? 'Start Game →' : 'Continue Game →'}
+        {hasStarted ? 'Continue Game →' : 'Start Game →'}
       </button>
     </div>
   )
