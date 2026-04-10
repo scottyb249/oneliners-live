@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { QRCodeSVG } from 'qrcode.react'
 import type { Game } from '@/lib/types'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 export default function WaitingView({ game }: Props) {
   const [playerCount, setPlayerCount] = useState(0)
+  const slide = game.display_slide ?? 0
 
   useEffect(() => {
     async function load() {
@@ -33,8 +35,20 @@ export default function WaitingView({ game }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [game.id])
 
+  if (slide === 0) return <LobbySlide game={game} playerCount={playerCount} />
+  if (slide === 1) return <HowToPlaySlide />
+  if (slide === 2) return <RulesSlide />
+  if (slide === 3) return <PledgeSlide />
+  return <LobbySlide game={game} playerCount={playerCount} />
+}
+
+// ─── Slide 0: Lobby ──────────────────────────────────────────────────────────
+
+function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) {
+  const joinUrl = `https://onelinerslive.com/?code=${game.code}`
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-10 px-12 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-12 text-center">
       {/* Logo */}
       <div>
         <p
@@ -49,29 +63,88 @@ export default function WaitingView({ game }: Props) {
         >
           LIVE
         </p>
-      </div>
-
-      {/* Game code */}
-      <div>
-        <p className="text-xl font-semibold uppercase tracking-widest text-white/40">
-          Game Code
-        </p>
         <p
-          className="font-black tracking-[0.3em] text-yellow-400 leading-none"
-          style={{ fontSize: 'clamp(4rem, 16vw, 12rem)' }}
+          className="text-white/40 font-medium mt-2"
+          style={{ fontSize: 'clamp(0.875rem, 2vw, 1.5rem)' }}
         >
-          {game.code}
+          The Interactive Word Game
         </p>
       </div>
 
-      {/* Join instruction */}
-      <p
-        className="text-white/50 font-medium"
-        style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}
-      >
-        Scan the QR code below or go to{' '}
-        <span className="text-white font-bold">onelinerslive.com</span> to join
-      </p>
+      <div className="flex flex-col lg:flex-row items-center gap-10">
+        {/* QR Code */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="rounded-2xl bg-white p-4">
+            <QRCodeSVG
+              value={joinUrl}
+              size={180}
+              bgColor="#ffffff"
+              fgColor="#09090b"
+              level="M"
+            />
+          </div>
+          <p className="text-white/40" style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1rem)' }}>
+            Scan to join
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden lg:flex flex-col items-center gap-2">
+          <div className="h-16 w-px bg-white/10" />
+          <p className="text-white/20 text-sm font-medium">or</p>
+          <div className="h-16 w-px bg-white/10" />
+        </div>
+
+        {/* Join info */}
+        <div className="flex flex-col gap-4 text-left">
+          <div>
+            <p
+              className="text-white/40 font-medium"
+              style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)' }}
+            >
+              Go to
+            </p>
+            <p
+              className="font-black text-white"
+              style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
+            >
+              onelinerslive.com
+            </p>
+          </div>
+
+          <div>
+            <p
+              className="text-white/40 font-medium"
+              style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)' }}
+            >
+              Game Code
+            </p>
+            <p
+              className="font-black tracking-[0.2em] text-yellow-400"
+              style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+            >
+              {game.code}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Play style bullets */}
+      <div className="flex flex-wrap justify-center gap-4">
+        {['🤝 Play as a Team', '🧑 Play Solo', '⚖️ Be a Judge!'].map((item) => (
+          <div
+            key={item}
+            className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-5 py-2"
+          >
+            <p
+              className="font-semibold text-yellow-400"
+              style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.25rem)' }}
+            >
+              {item}
+            </p>
+          </div>
+        ))}
+      </div>
 
       {/* Player count */}
       <div className="flex items-center gap-3">
@@ -82,6 +155,158 @@ export default function WaitingView({ game }: Props) {
         >
           {playerCount} {playerCount === 1 ? 'player' : 'players'} joined
         </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Slide 1: How to Play ─────────────────────────────────────────────────────
+
+function HowToPlaySlide() {
+  const steps = [
+    { icon: '📝', text: 'An acronym appears on screen — you have 60 seconds to write the funniest phrase using those letters.' },
+    { icon: '🎤', text: 'Submit your answer to the host. The host picks the top answers to read aloud.' },
+    { icon: '📱', text: 'Everyone votes for their favorite using their phone at onelinerslive.com.' },
+    { icon: '🏆', text: '1st place = 4 pts · 2nd = 3 pts · 3rd = 2 pts · 4th = 1 pt' },
+    { icon: '👾', text: 'The final KRACRONYM round is worth double — 16 / 8 / 4 / 2 points!' },
+    { icon: '🎁', text: 'Prizes for 1st, 2nd, and 3rd place at the end of the session.' },
+  ]
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-16 py-10">
+      <div className="text-center">
+        <p
+          className="font-black text-yellow-400 uppercase tracking-widest"
+          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+        >
+          Quick Rules
+        </p>
+        <p
+          className="font-black text-white mt-1"
+          style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+        >
+          How to Play
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl">
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-4"
+          >
+            <span style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}>{step.icon}</span>
+            <p
+              className="text-white/80 font-medium leading-snug"
+              style={{ fontSize: 'clamp(0.875rem, 1.6vw, 1.2rem)' }}
+            >
+              {step.text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Slide 2: Rules ───────────────────────────────────────────────────────────
+
+function RulesSlide() {
+  const rules = [
+    'The host judges answers by cleverness, how well they fit the acronym, and how funny they are.',
+    'Teams — no devices to help you. That would be dumb. And so would you.',
+    'Similar or identical answers? First one in wins. Be unique.',
+    'The host sets the appropriateness level based on the crowd: G · PG · PG-13 · R · XXX.',
+    'Do not use your answer to harass a real person. Example: B.A.D. = "Bob\'s A D***" — not cool.',
+    'Keep highly inflammatory political or religious content out of it. This is a fun game. Host probably won\'t read it anyway.',
+    'Voters can come and go whenever. Players must vote every round.',
+    'Players and teams — do NOT vote for yourself. Don\'t be that person.',
+  ]
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-16 py-10">
+      <div className="text-center">
+        <p
+          className="font-black text-yellow-400 uppercase tracking-widest"
+          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+        >
+          Don&apos;t be a Jabronie
+        </p>
+        <p
+          className="font-black text-white mt-1"
+          style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+        >
+          The Rules
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 w-full max-w-4xl">
+        {rules.map((rule, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
+          >
+            <span
+              className="font-black text-yellow-400 shrink-0 tabular-nums"
+              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}
+            >
+              {i + 1}.
+            </span>
+            <p
+              className="text-white/80 font-medium leading-snug"
+              style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}
+            >
+              {rule}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Slide 3: Pledge ─────────────────────────────────────────────────────────
+
+function PledgeSlide() {
+  const lines = [
+    'I will not get mad at the host for not choosing my answer.',
+    'I will not personally harass or single out anyone in this room (unless they\'re on my team).',
+    'I will do my best to not get offended and ruin a good time.',
+    'The host is the moderator, tiebreaker, and judge of what\'s appropriate.',
+    'I will not steal this game idea — because Scott Babel will beat me up.',
+  ]
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-10 px-16 py-10 text-center">
+      <div>
+        <p
+          className="font-black text-yellow-400 uppercase tracking-widest"
+          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+        >
+          Raise Your Right Hand &amp; Repeat After Me
+        </p>
+        <p
+          className="font-black text-white mt-1"
+          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
+        >
+          O.N.E. Liners Pledge ✋
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4 w-full max-w-3xl">
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 px-6 py-4"
+          >
+            <p
+              className="font-semibold text-white leading-snug"
+              style={{ fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
+            >
+              &ldquo;{line}&rdquo;
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   )

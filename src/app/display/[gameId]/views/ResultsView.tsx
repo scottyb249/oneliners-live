@@ -19,6 +19,8 @@ export default function ResultsView({ game }: Props) {
   const [leaderboard, setLeaderboard] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
 
+  const revealIndex = game.reveal_index ?? -1
+
   useEffect(() => {
     async function load() {
       const [{ data: answers }, { data: votes }, { data: players }] = await Promise.all([
@@ -68,6 +70,32 @@ export default function ResultsView({ game }: Props) {
     )
   }
 
+  // If nothing revealed yet, show a waiting state
+  if (revealIndex < 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-12">
+        <p
+          className="font-black text-yellow-400 uppercase tracking-widest"
+          style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
+        >
+          Round {game.current_round} · Results
+        </p>
+        <p
+          className="font-black text-white"
+          style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
+        >
+          Get Ready...
+        </p>
+        <p
+          className="text-white/40 font-medium"
+          style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
+        >
+          The host is about to reveal the answers
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-1 gap-8 px-10 py-6 overflow-hidden">
       {/* Left: ranked answers */}
@@ -80,46 +108,60 @@ export default function ResultsView({ game }: Props) {
         </p>
 
         <div className="flex flex-col gap-3 overflow-auto">
-          {results.map((answer, i) => (
-            <div
-              key={answer.id}
-              className={`rounded-2xl border px-5 py-4 ${
-                i === 0
-                  ? 'border-yellow-400/50 bg-yellow-400/10'
-                  : 'border-white/10 bg-white/5'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="font-semibold text-white/50 mb-1"
-                    style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
-                  >
-                    {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
-                    {answer.players?.name ?? '—'}
-                    {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
-                  </p>
-                  <p
-                    className="font-semibold text-white leading-snug"
-                    style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
-                  >
-                    {answer.content}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p
-                    className="font-black text-yellow-400 tabular-nums"
-                    style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
-                  >
-                    {answer.vote_count}
-                  </p>
-                  <p className="text-xs text-white/30">
-                    {answer.vote_count === 1 ? 'vote' : 'votes'}
-                  </p>
+          {results.map((answer, i) => {
+            const isRevealed = i <= revealIndex
+            const isNewest = i === revealIndex
+
+            return (
+              <div
+                key={answer.id}
+                style={{
+                  transition: 'opacity 0.6s ease, transform 0.6s ease',
+                  opacity: isRevealed ? 1 : 0,
+                  transform: isRevealed ? 'translateY(0)' : 'translateY(16px)',
+                }}
+                className={`rounded-2xl border px-5 py-4 ${
+                  isNewest
+                    ? i === 0
+                      ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
+                      : 'border-white/40 bg-white/10 shadow-lg shadow-white/10'
+                    : i === 0
+                    ? 'border-yellow-400/50 bg-yellow-400/10'
+                    : 'border-white/10 bg-white/5'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="font-semibold text-white/50 mb-1"
+                      style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
+                    >
+                      {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
+                      {answer.players?.name ?? '—'}
+                      {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
+                    </p>
+                    <p
+                      className="font-semibold text-white leading-snug"
+                      style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
+                    >
+                      {answer.content}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p
+                      className="font-black text-yellow-400 tabular-nums"
+                      style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
+                    >
+                      {answer.vote_count}
+                    </p>
+                    <p className="text-xs text-white/30">
+                      {answer.vote_count === 1 ? 'vote' : 'votes'}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 

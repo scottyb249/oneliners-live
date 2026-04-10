@@ -13,6 +13,8 @@ export interface Game {
   tiebreaker_ran: boolean
   used_acronyms: string[]
   created_at: string
+  display_slide: number
+  reveal_index: number
 }
 
 export interface Player {

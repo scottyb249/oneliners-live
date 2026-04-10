@@ -37,6 +37,9 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const [resolvedTies, setResolvedTies] = useState<ResolvedTie[]>([])
   const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
 
+  const revealIndex = game.reveal_index ?? -1
+  const allRevealed = results.length > 0 && revealIndex >= results.length - 1
+
   useEffect(() => {
     async function load() {
       const [{ data: answers }, { data: votes }, { data: players }] = await Promise.all([
@@ -81,7 +84,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   useEffect(() => {
     if (!game.is_final_round || loading || speedResolutionDone) return
     if (game.tiebreaker_ran) {
-      // Already resolved in a previous load
       setSpeedResolutionDone(true)
       return
     }
@@ -117,7 +119,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     for (const group of tiedGroups) {
       const tiedIds = group.players.map((p) => p.id)
 
-      // Fetch KRACRONYM answers for tied players (round = current_round, is_tiebreaker = false)
       const { data: answers } = await supabase
         .from('answers')
         .select('player_id, submitted_at')
@@ -126,14 +127,12 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         .eq('is_tiebreaker', false)
         .in('player_id', tiedIds)
 
-      // Sort by submitted_at ascending (fastest first); random tiebreak if same second
       const sorted = (answers ?? []).slice().sort((a, b) => {
         const diff = new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime()
         if (diff !== 0) return diff
         return Math.random() - 0.5
       })
 
-      // Assign final_position in speed order
       for (let i = 0; i < sorted.length; i++) {
         await supabase
           .from('players')
@@ -141,22 +140,38 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           .eq('id', sorted[i].player_id)
       }
 
-      // Record resolved tie for display (in speed-sorted order)
-      const sortedPlayers = sorted.map(
-        (a) => group.players.find((p) => p.id === a.player_id)!
-      ).filter(Boolean)
+      const sortedPlayers = sorted
+        .map((a) => group.players.find((p) => p.id === a.player_id)!)
+        .filter(Boolean)
 
       resolved.push({ position: group.position, players: sortedPlayers })
     }
 
-    // Mark tiebreaker_ran so endGame skips re-assigning their positions
-    await supabase
-      .from('games')
-      .update({ tiebreaker_ran: true })
-      .eq('id', game.id)
+    await supabase.from('games').update({ tiebreaker_ran: true }).eq('id', game.id)
 
     setResolvedTies(resolved)
     setSpeedResolutionDone(true)
+  }
+
+  async function revealNextAnswer() {
+    const next = revealIndex + 1
+    if (next >= results.length) return
+    await supabase.from('games').update({ reveal_index: next }).eq('id', game.id)
+  }
+
+  async function revealAllAnswers() {
+    await supabase
+      .from('games')
+      .update({ reveal_index: results.length - 1 })
+      .eq('id', game.id)
+  }
+
+  async function resetReveal() {
+    await supabase.from('games').update({ reveal_index: -1 }).eq('id', game.id)
+  }
+
+  async function triggerVoting() {
+    await supabase.from('games').update({ status: 'voting' }).eq('id', game.id)
   }
 
   async function endGame() {
@@ -176,10 +191,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     for (let i = 0; i < list.length; i++) {
       if (i > 0 && list[i].score < list[i - 1].score) pos = i + 1
       if (list[i].final_position == null) {
-        await supabase
-          .from('players')
-          .update({ final_position: pos })
-          .eq('id', list[i].id)
+        await supabase.from('players').update({ final_position: pos }).eq('id', list[i].id)
       }
     }
 
@@ -198,10 +210,55 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         Round {game.current_round} · Results{isFinalResults ? ' · KRACRONYM' : ''}
       </p>
 
+      {/* Answer reveal controls */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/30">
+            Answer Reveal
+          </p>
+          <p className="text-xs text-white/40">
+            {revealIndex + 1} / {results.length} shown
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={revealNextAnswer}
+            disabled={allRevealed}
+            className="flex-1 rounded-xl bg-yellow-400 py-2.5 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {allRevealed ? '✓ All Revealed' : `Reveal Next →`}
+          </button>
+          {!allRevealed && (
+            <button
+              onClick={revealAllAnswers}
+              className="rounded-xl border border-white/20 px-3 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
+            >
+              All
+            </button>
+          )}
+          {revealIndex >= 0 && (
+            <button
+              onClick={resetReveal}
+              className="rounded-xl border border-white/20 px-3 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
+            >
+              ↺
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Vote results */}
       <div className="space-y-2">
         {results.map((answer, i) => (
-          <div key={answer.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div
+            key={answer.id}
+            className={`rounded-xl border px-4 py-3 transition-all duration-300 ${
+              i <= revealIndex
+                ? 'border-white/10 bg-white/5 opacity-100'
+                : 'border-white/5 bg-white/[0.02] opacity-30'
+            }`}
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-white/40 mb-0.5">
@@ -225,9 +282,8 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           Leaderboard
         </p>
         {leaderboard.map((player, i) => {
-          const displayName = player.role === 'team_leader' && player.team_name
-            ? player.team_name
-            : player.name
+          const displayName =
+            player.role === 'team_leader' && player.team_name ? player.team_name : player.name
           return (
             <div key={player.id} className="flex items-center gap-3">
               <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
@@ -250,9 +306,9 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           {resolvedTies.map(({ position, players }) => (
             <p key={position} className="text-sm text-white">
               <span className="font-bold text-white/60">#{position}:</span>{' '}
-              {players.map((p) =>
-                p.role === 'team_leader' && p.team_name ? p.team_name : p.name
-              ).join(' → ')}
+              {players
+                .map((p) => (p.role === 'team_leader' && p.team_name ? p.team_name : p.name))
+                .join(' → ')}
             </p>
           ))}
         </div>
