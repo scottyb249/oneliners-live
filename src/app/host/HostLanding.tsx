@@ -64,7 +64,7 @@ export default function HostLanding() {
           code,
           host_name: hostName.trim(),
           status: 'waiting',
-          current_round: 1,
+          current_round: 0,
           current_acronym: null,
           round_started_at: null,
           is_final_round: false,
