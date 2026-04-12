@@ -31,7 +31,8 @@ export default function ActivePhase({ game, player }: Props) {
     letterCount === 5 ? '3.25rem' :
     '2.5rem'
 
-  const timerSeconds = game.is_final_round ? 90 : 60
+  // Read round_duration from DB, fall back to sensible defaults
+  const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
 
   useEffect(() => {
     async function checkExisting() {
@@ -101,6 +102,7 @@ export default function ActivePhase({ game, player }: Props) {
       <CountdownTimer
         key={`active-r${game.current_round}`}
         seconds={timerSeconds}
+        startedAt={game.round_started_at}
         onExpire={handleExpire}
       />
 
@@ -112,7 +114,7 @@ export default function ActivePhase({ game, player }: Props) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Sticky acronym reference — stays visible when keyboard opens on mobile */}
+            {/* Sticky acronym reference */}
             <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400/60 mb-2">
                 Your acronym

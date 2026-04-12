@@ -13,6 +13,7 @@ interface Props {
   onCancel: () => void
   onConfirmed: () => void
   onTakeBreak: () => void
+  onBackToResults?: () => void
 }
 
 export default function AcronymPicker({
@@ -23,6 +24,7 @@ export default function AcronymPicker({
   onCancel,
   onConfirmed,
   onTakeBreak,
+  onBackToResults,
 }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [loading, setLoading] = useState(true)
@@ -223,6 +225,16 @@ export default function AcronymPicker({
           🏆 Show Leaderboard
         </button>
       </div>
+
+      {/* Back to Results — only shown if host came from results screen */}
+      {onBackToResults && (
+        <button
+          onClick={onBackToResults}
+          className="w-full rounded-xl border border-blue-400/30 bg-blue-400/5 py-3 text-sm font-bold text-blue-400 hover:border-blue-400/60 hover:bg-blue-400/10 transition-all"
+        >
+          ← Back to Round Results
+        </button>
+      )}
 
       {/* Theme filter */}
       {themes.length > 2 && (

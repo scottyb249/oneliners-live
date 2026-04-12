@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 
 const HOST_PASSWORD = process.env.NEXT_PUBLIC_HOST_PASSWORD ?? ''
 const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+const TEST_GAME_ID = '00000000-0000-0000-0000-000000000001'
 
 function generateCode(): string {
   return Array.from({ length: 4 }, () =>
@@ -36,6 +37,7 @@ export default function HostLanding() {
   const [passwordError, setPasswordError] = useState('')
   const [hostName, setHostName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [testLoading, setTestLoading] = useState(false)
   const [error, setError] = useState('')
 
   function handlePasswordSubmit(e: React.FormEvent) {
@@ -81,6 +83,47 @@ export default function HostLanding() {
       const message = err instanceof Error ? err.message : 'Something went wrong.'
       setError(message)
       setLoading(false)
+    }
+  }
+
+  async function handleUseTestGame() {
+    setTestLoading(true)
+    setError('')
+
+    try {
+      // Clean up leftover data from previous test runs
+      await Promise.all([
+        supabase.from('answers').delete().eq('game_id', TEST_GAME_ID),
+        supabase.from('votes').delete().eq('game_id', TEST_GAME_ID),
+        supabase.from('players').delete().eq('game_id', TEST_GAME_ID).eq('is_host', false),
+      ])
+
+      // Reset to clean waiting state
+      const { error: resetError } = await supabase
+        .from('games')
+        .update({
+          host_name: hostName.trim() || 'Scott',
+          status: 'waiting',
+          current_round: 0,
+          current_acronym: null,
+          round_started_at: null,
+          is_final_round: false,
+          tiebreaker_ran: false,
+          used_acronyms: [],
+          display_slide: 0,
+          reveal_index: -1,
+          podium_step: 0,
+          round_duration: 90,
+        })
+        .eq('id', TEST_GAME_ID)
+
+      if (resetError) throw resetError
+
+      router.push(`/host/${TEST_GAME_ID}`)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not load test game.'
+      setError(message)
+      setTestLoading(false)
     }
   }
 
@@ -131,27 +174,45 @@ export default function HostLanding() {
 
         {/* Step 2: Create game */}
         {step === 'create' && (
-          <form onSubmit={handleCreateGame} className="w-full flex flex-col gap-4">
-            <input
-              type="text"
-              value={hostName}
-              onChange={e => setHostName(e.target.value)}
-              placeholder="Your name"
-              maxLength={30}
-              autoFocus
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-lg text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
-            />
-            {error && (
-              <p className="text-sm text-red-400 text-center">{error}</p>
-            )}
+          <div className="w-full flex flex-col gap-4">
+            <form onSubmit={handleCreateGame} className="flex flex-col gap-4">
+              <input
+                type="text"
+                value={hostName}
+                onChange={e => setHostName(e.target.value)}
+                placeholder="Your name"
+                maxLength={30}
+                autoFocus
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-5 py-4 text-lg text-white placeholder:text-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30"
+              />
+              {error && (
+                <p className="text-sm text-red-400 text-center">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loading || !hostName.trim()}
+                className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? 'Creating game...' : 'Create Game →'}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-white/30 font-medium">or</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {/* Test game shortcut */}
             <button
-              type="submit"
-              disabled={loading || !hostName.trim()}
-              className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={handleUseTestGame}
+              disabled={testLoading}
+              className="w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/50 transition-all hover:border-white/40 hover:text-white/80 active:scale-95 disabled:opacity-40"
             >
-              {loading ? 'Creating game...' : 'Create Game →'}
+              {testLoading ? 'Loading...' : '🧪 Use Test Game (CODE: TEST)'}
             </button>
-          </form>
+          </div>
         )}
 
       </div>

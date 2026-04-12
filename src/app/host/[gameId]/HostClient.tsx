@@ -36,6 +36,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
+  const [pickerCameFromResults, setPickerCameFromResults] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -90,7 +91,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
-  // Warn host if they try to navigate away mid-game
   useEffect(() => {
     if (!game || game.status === 'ended' || game.status === 'waiting') return
     function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -101,14 +101,20 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [game])
 
-  function openAcronymPicker(targetRound: number, isFinalRound: boolean) {
+  function openAcronymPicker(targetRound: number, isFinalRound: boolean, fromResults = false) {
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
+    setPickerCameFromResults(fromResults)
     setShowAcronymPicker(true)
   }
 
   async function handleTakeBreak() {
     await supabase.from('games').update({ status: 'break' }).eq('id', gameId)
+    setShowAcronymPicker(false)
+  }
+
+  async function handleBackToResults() {
+    await supabase.from('games').update({ status: 'results' }).eq('id', gameId)
     setShowAcronymPicker(false)
   }
 
@@ -140,7 +146,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }
 
   function handleLogOut() {
-    // Clear any host session storage and return to host landing
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('host_password_verified')
     }
@@ -160,9 +165,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
         <div className="text-center space-y-2">
           <p className="text-red-400 font-semibold">Game not found.</p>
-          {loadError && (
-            <p className="text-xs text-white/30 max-w-xs">{loadError}</p>
-          )}
+          {loadError && <p className="text-xs text-white/30 max-w-xs">{loadError}</p>}
         </div>
       </main>
     )
@@ -178,7 +181,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             Thanks for hosting, {game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}.
           </p>
         </div>
-
         <div className="flex flex-col w-full max-w-sm gap-3">
           <button
             onClick={() => router.push('/host')}
@@ -207,7 +209,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     <main className="flex min-h-screen flex-col bg-zinc-950">
       <TopBar game={game} />
 
-      {/* End Game button — always visible */}
       <div className="flex justify-end px-4 pt-3">
         <button
           onClick={() => setShowEndConfirm(true)}
@@ -227,6 +228,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
             onTakeBreak={handleTakeBreak}
+            onBackToResults={pickerCameFromResults ? handleBackToResults : undefined}
           />
         ) : (
           <>
@@ -252,16 +254,15 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             {game.status === 'results' && (
               <ResultsPanel
                 game={game}
-                onNextRound={() => openAcronymPicker(game.current_round + 1, false)}
+                onNextRound={() => openAcronymPicker(game.current_round + 1, false, true)}
                 onTakeBreak={handleTakeBreak}
-                onFinalRound={() => openAcronymPicker(game.current_round + 1, true)}
+                onFinalRound={() => openAcronymPicker(game.current_round + 1, true, true)}
               />
             )}
           </>
         )}
       </div>
 
-      {/* End Game confirmation modal */}
       {showEndConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">

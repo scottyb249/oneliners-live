@@ -7,6 +7,19 @@ interface Props {
 }
 
 export default function ActiveView({ game, answerCount }: Props) {
+  const acronym = game.current_acronym ?? '—'
+  const letterCount = acronym.replace(/[^A-Z]/gi, '').length
+
+  // Scale font down for longer acronyms so they don't overflow
+  const acronymFontSize =
+    letterCount <= 3 ? 'clamp(5rem, 22vw, 18rem)' :
+    letterCount === 4 ? 'clamp(4rem, 18vw, 15rem)' :
+    letterCount === 5 ? 'clamp(3rem, 14vw, 12rem)' :
+    'clamp(2.5rem, 10vw, 9rem)' // 6+ letters (KRACRONYM)
+
+  // Use round_duration from DB if set, otherwise fall back to defaults
+  const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-12">
       {/* Round label */}
@@ -19,10 +32,10 @@ export default function ActiveView({ game, answerCount }: Props) {
 
       {/* Acronym — the centrepiece */}
       <p
-        className="font-black tracking-[0.4em] text-white leading-none text-center"
-        style={{ fontSize: 'clamp(5rem, 22vw, 18rem)' }}
+        className="font-black tracking-[0.4em] text-white leading-none text-center break-all"
+        style={{ fontSize: acronymFontSize }}
       >
-        {game.current_acronym ?? '—'}
+        {acronym}
       </p>
 
       {/* Answer count */}
@@ -33,11 +46,11 @@ export default function ActiveView({ game, answerCount }: Props) {
         {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
       </p>
 
-      {/* Timer — smaller, below answer count */}
+      {/* Timer */}
       <div className="w-full max-w-xl">
         <BigCountdown
           key={`active-${game.current_round}`}
-          totalSeconds={60}
+          totalSeconds={timerSeconds}
           startedAt={game.round_started_at}
         />
       </div>

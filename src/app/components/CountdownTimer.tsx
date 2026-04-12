@@ -4,18 +4,27 @@ import { useState, useEffect, useRef } from 'react'
 
 interface Props {
   seconds: number
+  startedAt?: string | null
   onExpire?: () => void
 }
 
-export default function CountdownTimer({ seconds, onExpire }: Props) {
-  const [timeLeft, setTimeLeft] = useState(seconds)
+export default function CountdownTimer({ seconds, startedAt, onExpire }: Props) {
+  function calcRemaining() {
+    if (startedAt) {
+      const elapsed = (Date.now() - new Date(startedAt).getTime()) / 1000
+      return Math.max(0, Math.round(seconds - elapsed))
+    }
+    return seconds
+  }
+
+  const [timeLeft, setTimeLeft] = useState(calcRemaining)
   const onExpireRef = useRef(onExpire)
   onExpireRef.current = onExpire
 
-  // Reset if duration prop changes
   useEffect(() => {
-    setTimeLeft(seconds)
-  }, [seconds])
+    setTimeLeft(calcRemaining())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seconds, startedAt])
 
   useEffect(() => {
     if (timeLeft <= 0) {

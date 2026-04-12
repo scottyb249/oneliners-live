@@ -23,6 +23,11 @@ export default function ResultsView({ game }: Props) {
   const podiumStep = game.podium_step ?? 0
   const isFinal = game.is_final_round
 
+  // Results sorted high→low. Reveal goes bottom-up:
+  // revealIndex=0 means show last item, revealIndex=1 means show last 2, etc.
+  // An item at position i is revealed when i >= (results.length - 1 - revealIndex)
+  const revealThreshold = results.length - 1 - revealIndex
+
   useEffect(() => {
     async function load() {
       const [{ data: answers }, { data: votes }, { data: players }] = await Promise.all([
@@ -42,7 +47,7 @@ export default function ResultsView({ game }: Props) {
           .from('players')
           .select('*')
           .eq('game_id', game.id)
-          .eq('is_host', false)
+          .in('role', ['individual', 'team_leader'])
           .order('score', { ascending: false }),
       ])
 
@@ -51,6 +56,7 @@ export default function ResultsView({ game }: Props) {
         tally[v.answer_id] = (tally[v.answer_id] ?? 0) + 1
       }
 
+      // Sorted high→low so bottom-up reveal ends on the winner
       const withVotes: AnswerWithVotes[] = ((answers ?? []) as Answer[])
         .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0 }))
         .sort((a, b) => b.vote_count - a.vote_count)
@@ -94,7 +100,7 @@ export default function ResultsView({ game }: Props) {
 
   // ── FINAL ROUND: Podium suspense sequence ────────────────────────────────
   if (isFinal) {
-    // Step 0 — KRACRONYM answers only, no leaderboard
+    // Step 0 — KRACRONYM answers only, bottom-up reveal, no leaderboard
     if (podiumStep === 0) {
       return (
         <div className="flex flex-1 flex-col gap-4 px-10 py-6 overflow-hidden">
@@ -106,8 +112,8 @@ export default function ResultsView({ game }: Props) {
           </p>
           <div className="flex flex-col gap-3 overflow-auto">
             {results.map((answer, i) => {
-              const isRevealed = i <= revealIndex
-              const isNewest = i === revealIndex
+              const isRevealed = i >= revealThreshold
+              const isNewest = i === revealThreshold
               return (
                 <div
                   key={answer.id}
@@ -194,9 +200,7 @@ export default function ResultsView({ game }: Props) {
                 return (
                   <div
                     key={player.id}
-                    style={{
-                      animation: `fadeSlideUp 0.5s ease ${i * 0.15}s both`,
-                    }}
+                    style={{ animation: `fadeSlideUp 0.5s ease ${i * 0.15}s both` }}
                     className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-6 py-4"
                   >
                     <span
@@ -233,8 +237,8 @@ export default function ResultsView({ game }: Props) {
     }
 
     // Steps 2, 3, 4 — Individual podium reveals (3rd, 2nd, 1st)
-    const placeIndex = podiumStep - 2 // 0=3rd, 1=2nd, 2=1st
-    const leaderIndex = 2 - placeIndex // leaderboard index: 2=3rd, 1=2nd, 0=1st
+    const placeIndex = podiumStep - 2
+    const leaderIndex = 2 - placeIndex
     const placeLabels = ['3rd Place', '2nd Place', '🏆 1st Place']
     const placeColors = [
       'border-amber-500/60 bg-amber-600/10 text-amber-500',
@@ -255,7 +259,6 @@ export default function ResultsView({ game }: Props) {
         >
           Final Results · KRACRONYM
         </p>
-
         <div
           style={{ animation: 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }}
           className={`flex flex-col items-center gap-4 rounded-3xl border-2 px-16 py-12 ${placeColors[placeIndex]}`}
@@ -280,7 +283,6 @@ export default function ResultsView({ game }: Props) {
             {player?.score ?? 0} pts
           </p>
         </div>
-
         <style>{`
           @keyframes popIn {
             from { opacity: 0; transform: scale(0.5); }
@@ -292,10 +294,13 @@ export default function ResultsView({ game }: Props) {
   }
 
   // ── REGULAR ROUND results ─────────────────────────────────────────────────
+  // podium_step 0 = leaderboard hidden, 1 = leaderboard visible
+  const showLeaderboard = podiumStep >= 1
+
   return (
     <div className="flex flex-1 gap-6 px-8 py-6 overflow-hidden">
-      {/* Left: ranked answers */}
-      <div className="flex flex-[3] flex-col gap-4 overflow-hidden">
+      {/* Left: ranked answers — bottom-up reveal */}
+      <div className={`flex flex-col gap-4 overflow-hidden ${showLeaderboard ? 'flex-[3]' : 'flex-1'}`}>
         <p
           className="font-semibold uppercase tracking-[0.4em] text-yellow-400 shrink-0"
           style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
@@ -304,8 +309,8 @@ export default function ResultsView({ game }: Props) {
         </p>
         <div className="flex flex-col gap-3 overflow-auto">
           {results.map((answer, i) => {
-            const isRevealed = i <= revealIndex
-            const isNewest = i === revealIndex
+            const isRevealed = i >= revealThreshold
+            const isNewest = i === revealThreshold
             return (
               <div
                 key={answer.id}
@@ -359,46 +364,58 @@ export default function ResultsView({ game }: Props) {
         </div>
       </div>
 
-      {/* Right: leaderboard */}
-      <div className="flex-[2] flex-shrink-0 flex flex-col gap-4 overflow-hidden">
-        <p
-          className="font-semibold uppercase tracking-[0.4em] text-blue-400 shrink-0"
-          style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
-        >
-          Leaderboard
-        </p>
-        <div className="flex flex-col gap-2 overflow-auto">
-          {leaderboard.map((player, i) => (
-            <div
-              key={player.id}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
-                i === 0
-                  ? 'border-yellow-400/40 bg-yellow-400/10'
-                  : 'border-white/10 bg-white/5'
-              }`}
-            >
-              <span
-                className="w-6 text-center shrink-0"
-                style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
-              >
-                {i < 3 ? MEDALS[i] : `#${i + 1}`}
-              </span>
-              <p
-                className="flex-1 font-semibold text-white truncate"
-                style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
-              >
-                {player.name}
-              </p>
-              <p
-                className="font-black text-white shrink-0 tabular-nums"
-                style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
-              >
-                {player.score}
-              </p>
-            </div>
-          ))}
+      {/* Right: leaderboard — only shown when host triggers it (podium_step >= 1) */}
+      {showLeaderboard && (
+        <div className="flex-[2] flex-shrink-0 flex flex-col gap-4 overflow-hidden">
+          <p
+            className="font-semibold uppercase tracking-[0.4em] text-blue-400 shrink-0"
+            style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
+          >
+            Leaderboard
+          </p>
+          <div className="flex flex-col gap-2 overflow-auto">
+            {leaderboard.map((player, i) => {
+              const displayName = player.team_name ?? player.name
+              return (
+                <div
+                  key={player.id}
+                  style={{ animation: `fadeSlideUp 0.4s ease ${i * 0.08}s both` }}
+                  className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                    i === 0
+                      ? 'border-yellow-400/40 bg-yellow-400/10'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <span
+                    className="w-6 text-center shrink-0"
+                    style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
+                  >
+                    {i < 3 ? MEDALS[i] : `#${i + 1}`}
+                  </span>
+                  <p
+                    className="flex-1 font-semibold text-white truncate"
+                    style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
+                  >
+                    {displayName}
+                  </p>
+                  <p
+                    className="font-black text-white shrink-0 tabular-nums"
+                    style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
+                  >
+                    {player.score}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+          <style>{`
+            @keyframes fadeSlideUp {
+              from { opacity: 0; transform: translateY(12px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </div>
-      </div>
+      )}
     </div>
   )
 }
