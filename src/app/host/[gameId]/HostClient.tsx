@@ -107,6 +107,11 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setShowAcronymPicker(true)
   }
 
+  async function handleTakeBreak() {
+    await supabase.from('games').update({ status: 'break' }).eq('id', gameId)
+    setShowAcronymPicker(false)
+  }
+
   async function handleEndGame() {
     setEnding(true)
     await supabase.from('games').update({ status: 'ended' }).eq('id', gameId)
@@ -132,6 +137,14 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         podium_step: 0,
       })
       .eq('id', gameId)
+  }
+
+  function handleLogOut() {
+    // Clear any host session storage and return to host landing
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('host_password_verified')
+    }
+    router.push('/host')
   }
 
   if (loading) {
@@ -179,6 +192,12 @@ export default function HostClient({ gameId: rawGameId }: Props) {
           >
             Back to Lobby
           </button>
+          <button
+            onClick={handleLogOut}
+            className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/30 transition-all hover:border-white/20 hover:text-white/50 active:scale-95"
+          >
+            Log Out
+          </button>
         </div>
       </main>
     )
@@ -207,6 +226,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
+            onTakeBreak={handleTakeBreak}
           />
         ) : (
           <>
@@ -233,9 +253,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
               <ResultsPanel
                 game={game}
                 onNextRound={() => openAcronymPicker(game.current_round + 1, false)}
-                onTakeBreak={async () => {
-                  await supabase.from('games').update({ status: 'break' }).eq('id', game.id)
-                }}
+                onTakeBreak={handleTakeBreak}
                 onFinalRound={() => openAcronymPicker(game.current_round + 1, true)}
               />
             )}

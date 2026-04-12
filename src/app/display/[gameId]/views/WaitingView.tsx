@@ -48,22 +48,13 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
   const joinUrl = `https://onelinerslive.com/?code=${game.code}`
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-12 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-12 text-center">
       {/* Logo */}
-      <div>
-        <p
-          className="font-black text-yellow-400 leading-none"
-          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
-        >
-          O.N.E. Liners
-        </p>
-        <p
-          className="font-black text-white leading-tight"
-          style={{ fontSize: 'clamp(4rem, 16vw, 14rem)' }}
-        >
-          LIVE
-        </p>
-      </div>
+      <img
+        src="/logo.png"
+        alt="O.N.E. Liners Live"
+        style={{ height: 'clamp(8rem, 20vw, 16rem)', width: 'auto', objectFit: 'contain' }}
+      />
 
       <div className="flex flex-col lg:flex-row items-center gap-10">
         {/* QR Code */}
@@ -212,37 +203,37 @@ function RulesSlide() {
   ]
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-16 py-10">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-16 py-6">
       <div className="text-center">
         <p
           className="font-black text-yellow-400 uppercase tracking-widest"
-          style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
+          style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1.1rem)' }}
         >
           Don&apos;t be a Jabronie
         </p>
         <p
           className="font-black text-white mt-1"
-          style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)' }}
+          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
         >
           The Rules
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 w-full max-w-5xl">
+      <div className="flex flex-col gap-2 w-full max-w-5xl">
         {rules.map((rule, i) => (
           <div
             key={i}
-            className="flex items-start gap-5 rounded-xl border border-white/10 bg-white/5 px-6 py-4"
+            className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
           >
             <span
               className="font-black text-yellow-400 shrink-0 tabular-nums"
-              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
+              style={{ fontSize: 'clamp(0.85rem, 1.4vw, 1.1rem)' }}
             >
               {i + 1}.
             </span>
             <p
               className="text-white font-semibold leading-snug"
-              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
+              style={{ fontSize: 'clamp(0.85rem, 1.4vw, 1.1rem)' }}
             >
               {rule}
             </p>

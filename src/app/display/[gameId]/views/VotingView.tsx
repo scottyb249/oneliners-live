@@ -72,32 +72,19 @@ export default function VotingView({ game }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-3 px-10 py-5">
       {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p
-            className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
-            style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
-          >
-            Round {game.current_round} · Vote
-          </p>
-          <p
-            className="font-black text-white leading-tight"
-            style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
-          >
-            Pick your favourite one-liner
-          </p>
-        </div>
+      <div>
         <p
-          className="font-bold text-white shrink-0"
-          style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
+          className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
+          style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
         >
-          {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} cast
+          Round {game.current_round} · Vote
         </p>
-      </div>
-
-      {/* Timer — compact */}
-      <div className="w-full max-w-sm">
-        <BigCountdown key={`voting-${game.current_round}`} totalSeconds={90} />
+        <p
+          className="font-black text-white leading-tight"
+          style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
+        >
+          Pick your favourite one-liner
+        </p>
       </div>
 
       {/* Answer cards */}
@@ -113,7 +100,6 @@ export default function VotingView({ game }: Props) {
                 key={answer.id}
                 className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-5 py-3"
               >
-                {/* Vote bar background */}
                 <div
                   className="absolute inset-y-0 left-0 rounded-xl bg-blue-500/10 transition-all duration-700"
                   style={{ width: `${pct}%` }}
@@ -137,6 +123,23 @@ export default function VotingView({ game }: Props) {
           })}
         </div>
       )}
+
+      {/* Bottom-right: votes cast + compact timer */}
+      <div className="flex items-center justify-end gap-4 pt-1">
+        <p
+          className="font-bold text-white/70"
+          style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
+        >
+          {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} cast
+        </p>
+        <div className="w-24 shrink-0">
+          <BigCountdown
+            key={`voting-${game.current_round}`}
+            totalSeconds={90}
+            compact
+          />
+        </div>
+      </div>
     </div>
   )
 }

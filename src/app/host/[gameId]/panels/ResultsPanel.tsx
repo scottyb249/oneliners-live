@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Game, Player, Answer } from '@/lib/types'
+import type { Game, Answer } from '@/lib/types'
 
 interface Props {
   game: Game
@@ -44,11 +44,25 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const [actionLoading, setActionLoading] = useState(false)
   const [resolvedTies, setResolvedTies] = useState<ResolvedTie[]>([])
   const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [leaderboardOnDisplay, setLeaderboardOnDisplay] = useState(false)
 
   const revealIndex = game.reveal_index ?? -1
   const podiumStep = game.podium_step ?? 0
-  const allRevealed = results.length > 0 && revealIndex >= results.length - 1
   const isFinalResults = game.is_final_round
+
+  // Results are sorted lowest votes → highest votes for bottom-up reveal
+  // revealIndex 0 = last item in array (lowest), counts up toward index 0 (highest)
+  // We store results sorted high→low but reveal from the end
+  const allRevealed = results.length > 0 && revealIndex >= results.length - 1
+
+  // The "revealed" answers are the last (revealIndex+1) items in the array
+  // i.e. index >= results.length - 1 - revealIndex
+  const revealThreshold = results.length - 1 - revealIndex
+
+  const nextUpAnswer = !allRevealed && results.length > 0
+    ? results[revealThreshold - 1]
+    : null
 
   useEffect(() => {
     async function load() {
@@ -69,8 +83,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           .from('players')
           .select('id, name, role, team_name, score, is_tiebreaker_participant')
           .eq('game_id', game.id)
-          .neq('role', 'team_member')
-          .neq('role', 'crowd_voter')
+          .in('role', ['individual', 'team_leader'])
           .order('score', { ascending: false }),
       ])
 
@@ -79,6 +92,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         tally[v.answer_id] = (tally[v.answer_id] ?? 0) + 1
       }
 
+      // Sort high → low so that reveal from the end = low → high
       const withVotes: AnswerWithVotes[] = ((answers ?? []) as Answer[])
         .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0 }))
         .sort((a, b) => b.vote_count - a.vote_count)
@@ -180,6 +194,17 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     await supabase.from('games').update({ podium_step: next }).eq('id', game.id)
   }
 
+  async function toggleLeaderboardOnDisplay() {
+    const next = !leaderboardOnDisplay
+    setLeaderboardOnDisplay(next)
+    // Use podium_step = 1 to show leaderboard on display, 0 to hide
+    // Only for non-final rounds — final round uses its own podium sequence
+    if (!isFinalResults) {
+      await supabase.from('games').update({ podium_step: next ? 1 : 0 }).eq('id', game.id)
+    }
+    setShowLeaderboard(next)
+  }
+
   async function endGame() {
     if (actionLoading) return
     setActionLoading(true)
@@ -188,8 +213,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       .from('players')
       .select('id, score, final_position')
       .eq('game_id', game.id)
-      .neq('role', 'team_member')
-      .neq('role', 'crowd_voter')
+      .in('role', ['individual', 'team_leader'])
       .order('score', { ascending: false })
 
     const list = players ?? []
@@ -209,7 +233,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
         Round {game.current_round} · Results{isFinalResults ? ' · KRACRONYM' : ''}
       </p>
@@ -225,18 +249,29 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           </p>
         </div>
 
-        <div className="flex gap-2">
+        {/* Next up preview */}
+        {nextUpAnswer && (
+          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+            <p className="text-xs text-white/30 mb-0.5">Next up:</p>
+            <p className="text-sm font-semibold text-white/80">{nextUpAnswer.content}</p>
+            <p className="text-xs text-white/30 mt-0.5">
+              {nextUpAnswer.players?.name ?? '—'} · {nextUpAnswer.vote_count} votes
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-2 items-center">
           <button
             onClick={revealNextAnswer}
             disabled={allRevealed}
-            className="flex-1 rounded-xl bg-yellow-400 py-2.5 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {allRevealed ? '✓ All Revealed' : 'Reveal Next →'}
           </button>
           {!allRevealed && (
             <button
               onClick={revealAllAnswers}
-              className="rounded-xl border border-white/20 px-3 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
+              className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
             >
               All
             </button>
@@ -244,7 +279,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
           {revealIndex >= 0 && (
             <button
               onClick={resetReveal}
-              className="rounded-xl border border-white/20 px-3 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
+              className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/50 hover:bg-white/10 active:scale-95 transition-all"
             >
               ↺
             </button>
@@ -252,56 +287,75 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         </div>
       </div>
 
-      {/* Vote results */}
-      <div className="space-y-2">
-        {results.map((answer, i) => (
-          <div
-            key={answer.id}
-            className={`rounded-xl border px-4 py-3 transition-all duration-300 ${
-              i <= revealIndex
-                ? 'border-white/10 bg-white/5 opacity-100'
-                : 'border-white/5 bg-white/[0.02] opacity-30'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-white/40 mb-0.5">
-                  #{i + 1} · {answer.players?.name ?? '—'}
-                  {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
-                </p>
-                <p className="text-sm text-white">{answer.content}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xl font-black text-yellow-400">{answer.vote_count}</p>
-                <p className="text-xs text-white/30">votes</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Leaderboard */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
-          Leaderboard
-        </p>
-        {leaderboard.map((player, i) => {
-          const displayName =
-            player.role === 'team_leader' && player.team_name ? player.team_name : player.name
+      {/* Vote results — displayed high→low, revealed from the bottom up */}
+      <div className="space-y-1.5">
+        {results.map((answer, i) => {
+          const isRevealed = i >= revealThreshold
           return (
-            <div key={player.id} className="flex items-center gap-3">
-              <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                {player.role === 'team_leader' && player.team_name && (
-                  <p className="text-xs text-white/30 truncate">led by {player.name}</p>
-                )}
+            <div
+              key={answer.id}
+              className={`rounded-xl border px-4 py-2.5 transition-all duration-300 ${
+                isRevealed
+                  ? 'border-white/10 bg-white/5 opacity-100'
+                  : 'border-white/5 bg-white/[0.02] opacity-25'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-white/40 mb-0.5">
+                    {answer.players?.name ?? '—'}
+                    {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
+                  </p>
+                  <p className="text-sm text-white">{answer.content}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-lg font-black text-yellow-400">{answer.vote_count}</p>
+                  <p className="text-xs text-white/30">votes</p>
+                </div>
               </div>
-              <p className="text-sm font-black text-white">{player.score}</p>
             </div>
           )
         })}
       </div>
+
+      {/* Host leaderboard toggle (non-final rounds) */}
+      {!isFinalResults && (
+        <button
+          onClick={toggleLeaderboardOnDisplay}
+          className={`w-full rounded-xl border py-3 text-sm font-bold transition-all ${
+            leaderboardOnDisplay
+              ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
+              : 'border-white/20 text-white/60 hover:border-white/40 hover:text-white'
+          }`}
+        >
+          {leaderboardOnDisplay ? '📊 Hide Leaderboard on Display' : '📊 Show Leaderboard on Display'}
+        </button>
+      )}
+
+      {/* Host-side leaderboard preview */}
+      {showLeaderboard && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
+            Leaderboard
+          </p>
+          {leaderboard.map((player, i) => {
+            const displayName =
+              player.role === 'team_leader' && player.team_name ? player.team_name : player.name
+            return (
+              <div key={player.id} className="flex items-center gap-3">
+                <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                  {player.role === 'team_leader' && player.team_name && (
+                    <p className="text-xs text-white/30 truncate">led by {player.name}</p>
+                  )}
+                </div>
+                <p className="text-sm font-black text-white">{player.score}</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Speed resolution notice */}
       {isFinalResults && resolvedTies.length > 0 && (
@@ -325,9 +379,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
             <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
               Podium Reveal
             </p>
-            <p className="text-xs text-yellow-400/60">
-              Step {podiumStep + 1} / 5
-            </p>
+            <p className="text-xs text-yellow-400/60">Step {podiumStep + 1} / 5</p>
           </div>
           <p className="text-xs text-white/50">{PODIUM_STEP_LABELS[podiumStep]}</p>
           {podiumStep < 4 ? (
@@ -352,25 +404,27 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
 
       {/* Non-final action buttons */}
       {!isFinalResults && (
-        <div className="space-y-3">
+        <div className="space-y-3 pt-2">
           <button
             onClick={onNextRound}
             className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
           >
             Next Round →
           </button>
-          <button
-            onClick={onTakeBreak}
-            className="w-full rounded-xl border border-white/20 py-3 font-semibold text-white/70 transition-all hover:bg-white/10 active:scale-95"
-          >
-            Take a Break
-          </button>
-          <button
-            onClick={onFinalRound}
-            className="w-full rounded-xl bg-red-500 py-4 text-lg font-bold text-white transition-all hover:bg-red-400 active:scale-95"
-          >
-            ⚡ Final Round — KRACRONYM
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={onTakeBreak}
+              className="rounded-xl border border-white/20 py-3 text-sm font-semibold text-white/70 transition-all hover:bg-white/10 active:scale-95"
+            >
+              ☕ Take a Break
+            </button>
+            <button
+              onClick={onFinalRound}
+              className="rounded-xl bg-red-500/80 py-3 text-sm font-bold text-white transition-all hover:bg-red-500 active:scale-95"
+            >
+              ⚡ KRACRONYM
+            </button>
+          </div>
         </div>
       )}
     </div>

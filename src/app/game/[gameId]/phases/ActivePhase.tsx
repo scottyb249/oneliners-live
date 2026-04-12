@@ -22,7 +22,8 @@ export default function ActivePhase({ game, player }: Props) {
   const canSubmit = player.role === 'individual' || player.role === 'team_leader'
 
   const acronym = game.current_acronym ?? '—'
-  const letterCount = acronym.replace(/[^A-Z]/gi, '').length
+  const letters = acronym.replace(/[^A-Z]/gi, '').split('')
+  const letterCount = letters.length
 
   const acronymFontSize =
     letterCount <= 3 ? '5rem' :
@@ -82,7 +83,7 @@ export default function ActivePhase({ game, player }: Props) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-8">
+    <div className="flex w-full flex-col gap-6">
       {/* Acronym display */}
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
@@ -110,7 +111,24 @@ export default function ActivePhase({ game, player }: Props) {
             <p className="mt-1 text-sm text-white/60">Get ready to vote.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Sticky acronym reference — stays visible when keyboard opens on mobile */}
+            <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400/60 mb-2">
+                Your acronym
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {letters.map((letter, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-yellow-400/15 border border-yellow-400/30 font-black text-yellow-400 text-lg"
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
@@ -118,9 +136,14 @@ export default function ActivePhase({ game, player }: Props) {
               maxLength={200}
               rows={3}
               disabled={locked}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               className="w-full resize-none rounded-xl border border-white/40 bg-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/30 disabled:opacity-40"
             />
+
             {error && <p className="text-sm text-red-400">{error}</p>}
+
             <button
               type="submit"
               disabled={!answer.trim() || submitting || locked}
