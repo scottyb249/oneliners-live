@@ -37,6 +37,15 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   const lastActivityRef = useRef<number>(Date.now())
 
+  async function refreshGame() {
+    const { data } = await supabase.from('games').select('*').eq('id', gameId).single()
+    if (data) {
+      setGame(data as Game)
+      lastActivityRef.current = Date.now()
+      setShowAbandonedBanner(false)
+    }
+  }
+
   useEffect(() => {
     async function init() {
       const [{ data: gameData }, { data: playerData }, { count }] = await Promise.all([
@@ -74,6 +83,7 @@ export default function GameClient({ gameId, playerId }: Props) {
     else setLoading(false)
   }, [gameId, playerId])
 
+  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`game-${gameId}`)
@@ -95,6 +105,18 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
+  // Auto-reconnect when screen wakes from sleep/lock
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshGame()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [gameId])
+
+  // Abandonment check
   useEffect(() => {
     const interval = setInterval(() => {
       if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'break') return
@@ -167,10 +189,10 @@ export default function GameClient({ gameId, playerId }: Props) {
           <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-3 text-center">
             <p className="text-sm font-semibold text-yellow-400">The game may have ended or the host left.</p>
             <button
-              onClick={() => setShowLeaveConfirm(true)}
-              className="mt-2 text-xs font-bold uppercase tracking-widest text-yellow-400 underline underline-offset-2"
+              onClick={refreshGame}
+              className="mt-1 text-xs font-bold uppercase tracking-widest text-yellow-400 underline underline-offset-2"
             >
-              Leave Game
+              Tap to Reconnect
             </button>
           </div>
         </div>
@@ -181,7 +203,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         {game.status === 'waiting' && (
           <WaitingPhase game={game} player={player} playerCount={playerCount} />
         )}
-        {/* Break — show a friendly hold screen */}
         {game.status === 'break' && (
           <div className="flex flex-col items-center gap-6 text-center py-12">
             <p className="text-5xl">☕</p>

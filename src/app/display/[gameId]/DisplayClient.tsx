@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game } from '@/lib/types'
 import BottomBar from './components/BottomBar'
@@ -19,12 +19,17 @@ export default function DisplayClient({ gameId }: Props) {
   const [game, setGame] = useState<Game | null>(null)
   const [answerCount, setAnswerCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [closed, setClosed] = useState(false)
+  const prevStatusRef = useRef<string | null>(null)
 
   // Initial load
   useEffect(() => {
     async function init() {
       const { data } = await supabase.from('games').select('*').eq('id', gameId).single()
-      if (data) setGame(data as Game)
+      if (data) {
+        setGame(data as Game)
+        prevStatusRef.current = (data as Game).status
+      }
       setLoading(false)
     }
     init()
@@ -53,6 +58,19 @@ export default function DisplayClient({ gameId }: Props) {
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
         (payload) => {
           const updated = payload.new as Game
+
+          // If game transitions from an active state back to 'waiting',
+          // that means host logged out / reset — close the display
+          if (
+            prevStatusRef.current !== null &&
+            prevStatusRef.current !== 'waiting' &&
+            updated.status === 'waiting'
+          ) {
+            setClosed(true)
+            return
+          }
+
+          prevStatusRef.current = updated.status
           setGame(updated)
         },
       )
@@ -73,6 +91,17 @@ export default function DisplayClient({ gameId }: Props) {
 
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
+
+  if (closed) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 gap-6 text-center px-8">
+        <p className="text-6xl">👋</p>
+        <p className="text-3xl font-black text-white">Thanks for playing!</p>
+        <p className="text-white/40 text-lg">The host has ended the session.</p>
+        <p className="text-white/20 text-sm mt-4">onelinerslive.com</p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -99,14 +128,11 @@ export default function DisplayClient({ gameId }: Props) {
       <div className="flex flex-1 flex-col">
         {game.status === 'waiting' && <WaitingView game={game} />}
         {game.status === 'break' && <BreakView game={game} />}
-        {game.status === 'active' && (
-          <ActiveView game={game} answerCount={answerCount} />
-        )}
+        {game.status === 'active' && <ActiveView game={game} answerCount={answerCount} />}
         {game.status === 'voting' && <VotingView game={game} />}
         {game.status === 'results' && <ResultsView game={game} />}
         {game.status === 'ended' && <EndedView game={game} />}
       </div>
-
       <BottomBar game={game} />
     </div>
   )
