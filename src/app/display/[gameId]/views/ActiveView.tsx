@@ -10,14 +10,12 @@ export default function ActiveView({ game, answerCount }: Props) {
   const acronym = game.current_acronym ?? '—'
   const letterCount = acronym.replace(/[^A-Z]/gi, '').length
 
-  // Scale font down for longer acronyms so they don't overflow
   const acronymFontSize =
     letterCount <= 3 ? 'clamp(5rem, 22vw, 18rem)' :
     letterCount === 4 ? 'clamp(4rem, 18vw, 15rem)' :
     letterCount === 5 ? 'clamp(3rem, 14vw, 12rem)' :
-    'clamp(2.5rem, 10vw, 9rem)' // 6+ letters (KRACRONYM)
+    'clamp(2.5rem, 10vw, 9rem)'
 
-  // Use round_duration from DB if set, otherwise fall back to defaults
   const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
 
   return (
@@ -30,7 +28,7 @@ export default function ActiveView({ game, answerCount }: Props) {
         Round {game.current_round}{game.is_final_round ? ' · KRACRONYM' : ''}
       </p>
 
-      {/* Acronym — the centrepiece */}
+      {/* Acronym */}
       <p
         className="font-black tracking-[0.4em] text-white leading-none text-center break-all"
         style={{ fontSize: acronymFontSize }}
@@ -46,13 +44,22 @@ export default function ActiveView({ game, answerCount }: Props) {
         {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
       </p>
 
-      {/* Timer */}
-      <div className="w-full max-w-xl">
-        <BigCountdown
-          key={`active-${game.current_round}`}
-          totalSeconds={timerSeconds}
-          startedAt={game.round_started_at}
-        />
+      {/* Timer — compact, bottom right area */}
+      <div className="flex items-center justify-end w-full max-w-xl gap-3">
+        <span
+          className="tabular-nums font-black text-white"
+          style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
+        >
+          {/* rendered by BigCountdown compact */}
+        </span>
+        <div className="w-full max-w-xs">
+          <BigCountdown
+            key={`active-${game.current_round}`}
+            totalSeconds={timerSeconds}
+            startedAt={game.round_started_at}
+            compact
+          />
+        </div>
       </div>
     </div>
   )
