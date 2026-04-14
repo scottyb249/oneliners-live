@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game, Answer } from '@/lib/types'
 import BigCountdown from '../components/BigCountdown'
+import { VOTING_TIMER_DURATION } from '@/lib/constants'
 
 interface Props {
   game: Game
@@ -19,7 +20,7 @@ export default function VotingView({ game }: Props) {
       const [{ data: ans }, { data: votes }] = await Promise.all([
         supabase
           .from('answers')
-          .select('id, content')
+          .select('id, content, is_fastest')
           .eq('game_id', game.id)
           .eq('round', game.current_round)
           .eq('approved', true)
@@ -70,7 +71,7 @@ export default function VotingView({ game }: Props) {
   const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0)
 
   return (
-    <div className="flex flex-1 flex-col gap-3 px-10 py-5">
+    <div className="relative flex flex-1 flex-col gap-3 px-10 py-5">
       {/* Header row */}
       <div>
         <p
@@ -95,6 +96,8 @@ export default function VotingView({ game }: Props) {
           {sorted.map((answer) => {
             const count = voteCounts[answer.id] ?? 0
             const pct = (count / maxVotes) * 100
+            const isFastest = (answer as any).is_fastest
+
             return (
               <div
                 key={answer.id}
@@ -105,12 +108,22 @@ export default function VotingView({ game }: Props) {
                   style={{ width: `${pct}%` }}
                 />
                 <div className="relative flex items-center justify-between gap-6">
-                  <p
-                    className="flex-1 font-semibold text-white leading-snug"
-                    style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
-                  >
-                    {answer.content}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="font-semibold text-white leading-snug"
+                      style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
+                    >
+                      {answer.content}
+                    </p>
+                    {isFastest && (
+                      <p
+                        className="text-yellow-400 font-bold mt-0.5"
+                        style={{ fontSize: 'clamp(0.65rem, 1vw, 0.875rem)' }}
+                      >
+                        ⚡ Fastest Answer +1
+                      </p>
+                    )}
+                  </div>
                   <p
                     className="shrink-0 font-black text-white tabular-nums"
                     style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)' }}
@@ -124,18 +137,18 @@ export default function VotingView({ game }: Props) {
         </div>
       )}
 
-      {/* Bottom-right: votes cast + compact timer */}
-      <div className="flex items-center justify-end gap-4 pt-1">
+      {/* Timer + votes cast — pinned bottom-right corner */}
+      <div className="absolute bottom-4 right-10 flex items-center gap-3">
         <p
           className="font-bold text-white/70"
           style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
         >
           {totalVotes} {totalVotes === 1 ? 'vote' : 'votes'} cast
         </p>
-        <div className="w-24 shrink-0">
+        <div className="w-32 shrink-0">
           <BigCountdown
             key={`voting-${game.current_round}`}
-            totalSeconds={90}
+            totalSeconds={VOTING_TIMER_DURATION}
             compact
           />
         </div>

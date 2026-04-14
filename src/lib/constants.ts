@@ -9,7 +9,7 @@ export const TIMER_DURATIONS: Record<number, number> = {
   9: 180,
 }
 
-export const VOTING_TIMER_DURATION = 90
+export const VOTING_TIMER_DURATION = 60
 
 export const KRACRONYM_TIMER_DURATION = 180
 

@@ -45,20 +45,36 @@ export default function AnswerManagementPanel({ game }: Props) {
           }
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'answers',
+          filter: `game_id=eq.${game.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as Answer
+          if (updated.round === game.current_round) {
+            setAnswers((prev) =>
+              prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a)),
+            )
+          }
+        },
+      )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [game.id, game.current_round])
 
-  const approvedCount = answers.filter((a) => a.approved).length
+  const approvedAnswers = answers.filter((a) => a.approved)
+  const approvedCount = approvedAnswers.length
   const atLimit = approvedCount >= MAX_APPROVED
 
   async function toggleApprove(answer: Answer) {
     const newVal = !answer.approved
-    // Prevent approving beyond limit
     if (newVal && atLimit) return
 
-    // Optimistic update
     setAnswers((prev) =>
       prev.map((a) => (a.id === answer.id ? { ...a, approved: newVal } : a)),
     )
@@ -69,6 +85,23 @@ export default function AnswerManagementPanel({ game }: Props) {
   async function launchVoting() {
     if (approvedCount === 0 || launching) return
     setLaunching(true)
+
+    // Find the approved answer with the earliest submitted_at
+    const fastest = approvedAnswers.reduce((prev, curr) =>
+      new Date(curr.submitted_at).getTime() < new Date(prev.submitted_at).getTime() ? curr : prev
+    )
+
+    // Mark it as fastest and award +1 to that player's score
+    await supabase
+      .from('answers')
+      .update({ is_fastest: true })
+      .eq('id', fastest.id)
+
+    await supabase.rpc('increment_player_score', {
+      p_player_id: fastest.player_id,
+      p_amount: 1,
+    })
+
     await supabase.from('games').update({ status: 'voting' }).eq('id', game.id)
   }
 
@@ -85,7 +118,9 @@ export default function AnswerManagementPanel({ game }: Props) {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-black text-white">{approvedCount}<span className="text-white/30 text-lg">/{MAX_APPROVED}</span></p>
+          <p className="text-2xl font-black text-white">
+            {approvedCount}<span className="text-white/30 text-lg">/{MAX_APPROVED}</span>
+          </p>
           <p className="text-xs text-white/30">approved</p>
         </div>
       </div>
@@ -108,6 +143,7 @@ export default function AnswerManagementPanel({ game }: Props) {
         <div className="space-y-2">
           {answers.map((answer, i) => {
             const isApproved = answer.approved
+            const isFastest = (answer as any).is_fastest
             const disableApprove = !isApproved && atLimit
 
             return (
@@ -122,7 +158,12 @@ export default function AnswerManagementPanel({ game }: Props) {
                 <span className="mt-0.5 text-xs font-bold text-white/20 w-5 shrink-0">
                   {i + 1}
                 </span>
-                <p className="flex-1 text-sm text-white leading-relaxed">{answer.content}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white leading-relaxed">{answer.content}</p>
+                  {isFastest && (
+                    <p className="text-xs text-yellow-400 font-semibold mt-0.5">⚡ Fastest Answer +1</p>
+                  )}
+                </div>
                 <button
                   onClick={() => toggleApprove(answer)}
                   disabled={disableApprove}

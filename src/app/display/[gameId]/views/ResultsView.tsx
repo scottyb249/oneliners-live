@@ -10,6 +10,7 @@ interface Props {
 
 interface AnswerWithVotes extends Answer {
   vote_count: number
+  is_fastest: boolean
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -23,9 +24,6 @@ export default function ResultsView({ game }: Props) {
   const podiumStep = game.podium_step ?? 0
   const isFinal = game.is_final_round
 
-  // Results sorted high→low. Reveal goes bottom-up:
-  // revealIndex=0 means show last item, revealIndex=1 means show last 2, etc.
-  // An item at position i is revealed when i >= (results.length - 1 - revealIndex)
   const revealThreshold = results.length - 1 - revealIndex
 
   useEffect(() => {
@@ -56,9 +54,12 @@ export default function ResultsView({ game }: Props) {
         tally[v.answer_id] = (tally[v.answer_id] ?? 0) + 1
       }
 
-      // Sorted high→low so bottom-up reveal ends on the winner
       const withVotes: AnswerWithVotes[] = ((answers ?? []) as Answer[])
-        .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0 }))
+        .map((a) => ({
+          ...a,
+          vote_count: tally[a.id] ?? 0,
+          is_fastest: (a as any).is_fastest ?? false,
+        }))
         .sort((a, b) => b.vote_count - a.vote_count)
 
       setResults(withVotes)
@@ -98,9 +99,63 @@ export default function ResultsView({ game }: Props) {
     )
   }
 
+  // ── Answer card helper ────────────────────────────────────────────────────
+  function AnswerCard({ answer, i, isNewest }: { answer: AnswerWithVotes; i: number; isNewest: boolean }) {
+    return (
+      <div
+        style={{
+          transition: 'opacity 0.6s ease, transform 0.6s ease',
+          opacity: 1,
+          transform: 'translateY(0)',
+        }}
+        className={`rounded-2xl border px-5 py-4 ${
+          isNewest
+            ? i === 0
+              ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
+              : 'border-white/40 bg-white/10 shadow-lg shadow-white/10'
+            : i === 0
+            ? 'border-yellow-400/50 bg-yellow-400/10'
+            : 'border-white/10 bg-white/5'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-semibold text-white/50 mb-1"
+              style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
+            >
+              {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
+              {answer.players?.name ?? '—'}
+              {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
+              {answer.is_fastest && (
+                <span className="ml-2 text-yellow-400 font-bold">⚡ Fastest +1</span>
+              )}
+            </p>
+            <p
+              className="font-semibold text-white leading-snug"
+              style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
+            >
+              {answer.content}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p
+              className="font-black text-yellow-400 tabular-nums"
+              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
+            >
+              {answer.vote_count}
+            </p>
+            <p className="text-xs text-white/30">
+              {answer.vote_count === 1 ? 'vote' : 'votes'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ── FINAL ROUND: Podium suspense sequence ────────────────────────────────
   if (isFinal) {
-    // Step 0 — KRACRONYM answers only, bottom-up reveal, no leaderboard
     if (podiumStep === 0) {
       return (
         <div className="flex flex-1 flex-col gap-4 px-10 py-6 overflow-hidden">
@@ -122,45 +177,8 @@ export default function ResultsView({ game }: Props) {
                     opacity: isRevealed ? 1 : 0,
                     transform: isRevealed ? 'translateY(0)' : 'translateY(16px)',
                   }}
-                  className={`rounded-2xl border px-5 py-4 ${
-                    isNewest
-                      ? i === 0
-                        ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
-                        : 'border-white/40 bg-white/10'
-                      : i === 0
-                      ? 'border-yellow-400/50 bg-yellow-400/10'
-                      : 'border-white/10 bg-white/5'
-                  }`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="font-semibold text-white/50 mb-1"
-                        style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
-                      >
-                        {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
-                        {answer.players?.name ?? '—'}
-                        {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
-                      </p>
-                      <p
-                        className="font-semibold text-white leading-snug"
-                        style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
-                      >
-                        {answer.content}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p
-                        className="font-black text-yellow-400 tabular-nums"
-                        style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
-                      >
-                        {answer.vote_count}
-                      </p>
-                      <p className="text-xs text-white/30">
-                        {answer.vote_count === 1 ? 'vote' : 'votes'}
-                      </p>
-                    </div>
-                  </div>
+                  <AnswerCard answer={answer} i={i} isNewest={isNewest} />
                 </div>
               )
             })}
@@ -169,7 +187,6 @@ export default function ResultsView({ game }: Props) {
       )
     }
 
-    // Step 1 — Leaderboard from bottom, 4th place and below only
     if (podiumStep === 1) {
       const below3 = leaderboard.slice(3)
       return (
@@ -294,7 +311,6 @@ export default function ResultsView({ game }: Props) {
   }
 
   // ── REGULAR ROUND results ─────────────────────────────────────────────────
-  // podium_step 0 = leaderboard hidden, 1 = leaderboard visible
   const showLeaderboard = podiumStep >= 1
 
   return (
@@ -319,52 +335,15 @@ export default function ResultsView({ game }: Props) {
                   opacity: isRevealed ? 1 : 0,
                   transform: isRevealed ? 'translateY(0)' : 'translateY(16px)',
                 }}
-                className={`rounded-2xl border px-5 py-4 ${
-                  isNewest
-                    ? i === 0
-                      ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
-                      : 'border-white/40 bg-white/10 shadow-lg shadow-white/10'
-                    : i === 0
-                    ? 'border-yellow-400/50 bg-yellow-400/10'
-                    : 'border-white/10 bg-white/5'
-                }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="font-semibold text-white/50 mb-1"
-                      style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
-                    >
-                      {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
-                      {answer.players?.name ?? '—'}
-                      {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
-                    </p>
-                    <p
-                      className="font-semibold text-white leading-snug"
-                      style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
-                    >
-                      {answer.content}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p
-                      className="font-black text-yellow-400 tabular-nums"
-                      style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
-                    >
-                      {answer.vote_count}
-                    </p>
-                    <p className="text-xs text-white/30">
-                      {answer.vote_count === 1 ? 'vote' : 'votes'}
-                    </p>
-                  </div>
-                </div>
+                <AnswerCard answer={answer} i={i} isNewest={isNewest} />
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* Right: leaderboard — only shown when host triggers it (podium_step >= 1) */}
+      {/* Right: leaderboard */}
       {showLeaderboard && (
         <div className="flex-[2] flex-shrink-0 flex flex-col gap-4 overflow-hidden">
           <p

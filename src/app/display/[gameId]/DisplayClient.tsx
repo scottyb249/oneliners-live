@@ -59,13 +59,9 @@ export default function DisplayClient({ gameId }: Props) {
         (payload) => {
           const updated = payload.new as Game
 
-          // If game transitions from an active state back to 'waiting',
-          // that means host logged out / reset — close the display
-          if (
-            prevStatusRef.current !== null &&
-            prevStatusRef.current !== 'waiting' &&
-            updated.status === 'waiting'
-          ) {
+          // Only close display when host explicitly sets display_close flag
+          // This prevents false-triggers when host navigates back to lobby mid-game
+          if ((updated as any).display_close === true) {
             setClosed(true)
             return
           }
@@ -119,6 +115,16 @@ export default function DisplayClient({ gameId }: Props) {
         <p className="text-red-400" style={{ fontSize: '1.5rem' }}>
           Game not found.
         </p>
+      </div>
+    )
+  }
+
+  // Display paused by host — show holding screen
+  if ((game as any).display_active === false) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 gap-6 text-center px-8">
+        <img src="/logo.png" alt="O.N.E. Liners Live" className="w-48 opacity-60" />
+        <p className="text-white/20 text-lg font-semibold uppercase tracking-widest">Be right back...</p>
       </div>
     )
   }

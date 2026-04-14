@@ -118,6 +118,14 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setShowAcronymPicker(false)
   }
 
+  async function handleToggleDisplay() {
+    const currentlyActive = (game as any)?.display_active !== false
+    await supabase
+      .from('games')
+      .update({ display_active: !currentlyActive })
+      .eq('id', gameId)
+  }
+
   async function handleEndGame() {
     setEnding(true)
     await supabase.from('games').update({ status: 'ended' }).eq('id', gameId)
@@ -141,6 +149,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         display_slide: 0,
         reveal_index: -1,
         podium_step: 0,
+        display_active: true,
       })
       .eq('id', gameId)
   }
@@ -228,6 +237,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
             onTakeBreak={handleTakeBreak}
+            onToggleDisplay={handleToggleDisplay}
             onBackToResults={pickerCameFromResults ? handleBackToResults : undefined}
           />
         ) : (

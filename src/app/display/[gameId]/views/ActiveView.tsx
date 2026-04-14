@@ -19,7 +19,7 @@ export default function ActiveView({ game, answerCount }: Props) {
   const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 px-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center gap-6 px-12">
       {/* Round label */}
       <p
         className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
@@ -44,22 +44,14 @@ export default function ActiveView({ game, answerCount }: Props) {
         {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
       </p>
 
-      {/* Timer — compact, bottom right area */}
-      <div className="flex items-center justify-end w-full max-w-xl gap-3">
-        <span
-          className="tabular-nums font-black text-white"
-          style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
-        >
-          {/* rendered by BigCountdown compact */}
-        </span>
-        <div className="w-full max-w-xs">
-          <BigCountdown
-            key={`active-${game.current_round}`}
-            totalSeconds={timerSeconds}
-            startedAt={game.round_started_at}
-            compact
-          />
-        </div>
+      {/* Timer — pinned bottom-right corner */}
+      <div className="absolute bottom-4 right-10 w-48">
+        <BigCountdown
+          key={`active-${game.current_round}`}
+          totalSeconds={timerSeconds}
+          startedAt={game.round_started_at}
+          compact
+        />
       </div>
     </div>
   )

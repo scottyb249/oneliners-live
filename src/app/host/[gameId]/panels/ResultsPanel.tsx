@@ -13,6 +13,7 @@ interface Props {
 
 interface AnswerWithVotes extends Answer {
   vote_count: number
+  is_fastest: boolean
 }
 
 interface LeaderboardEntry {
@@ -51,15 +52,8 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const podiumStep = game.podium_step ?? 0
   const isFinalResults = game.is_final_round
 
-  // Results are sorted lowest votes → highest votes for bottom-up reveal
-  // revealIndex 0 = last item in array (lowest), counts up toward index 0 (highest)
-  // We store results sorted high→low but reveal from the end
   const allRevealed = results.length > 0 && revealIndex >= results.length - 1
-
-  // The "revealed" answers are the last (revealIndex+1) items in the array
-  // i.e. index >= results.length - 1 - revealIndex
   const revealThreshold = results.length - 1 - revealIndex
-
   const nextUpAnswer = !allRevealed && results.length > 0
     ? results[revealThreshold - 1]
     : null
@@ -92,9 +86,12 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         tally[v.answer_id] = (tally[v.answer_id] ?? 0) + 1
       }
 
-      // Sort high → low so that reveal from the end = low → high
       const withVotes: AnswerWithVotes[] = ((answers ?? []) as Answer[])
-        .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0 }))
+        .map((a) => ({
+          ...a,
+          vote_count: tally[a.id] ?? 0,
+          is_fastest: (a as any).is_fastest ?? false,
+        }))
         .sort((a, b) => b.vote_count - a.vote_count)
 
       setResults(withVotes)
@@ -197,8 +194,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   async function toggleLeaderboardOnDisplay() {
     const next = !leaderboardOnDisplay
     setLeaderboardOnDisplay(next)
-    // Use podium_step = 1 to show leaderboard on display, 0 to hide
-    // Only for non-final rounds — final round uses its own podium sequence
     if (!isFinalResults) {
       await supabase.from('games').update({ podium_step: next ? 1 : 0 }).eq('id', game.id)
     }
@@ -256,6 +251,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
             <p className="text-sm font-semibold text-white/80">{nextUpAnswer.content}</p>
             <p className="text-xs text-white/30 mt-0.5">
               {nextUpAnswer.players?.name ?? '—'} · {nextUpAnswer.vote_count} votes
+              {nextUpAnswer.is_fastest && ' · ⚡ Fastest'}
             </p>
           </div>
         )}
@@ -287,7 +283,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         </div>
       </div>
 
-      {/* Vote results — displayed high→low, revealed from the bottom up */}
+      {/* Vote results — revealed bottom up */}
       <div className="space-y-1.5">
         {results.map((answer, i) => {
           const isRevealed = i >= revealThreshold
@@ -305,6 +301,9 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
                   <p className="text-xs text-white/40 mb-0.5">
                     {answer.players?.name ?? '—'}
                     {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
+                    {answer.is_fastest && (
+                      <span className="ml-2 text-yellow-400 font-semibold">⚡ Fastest +1</span>
+                    )}
                   </p>
                   <p className="text-sm text-white">{answer.content}</p>
                 </div>

@@ -24,9 +24,10 @@ interface Props {
 }
 
 const HOW_TO_PLAY = [
-  { icon: '📝', text: 'An acronym appears on screen — write the funniest phrase using those letters.' },
-  { icon: '📱', text: 'Submit your answer on your phone. The host approves the top 10.' },
-  { icon: '🗳️', text: 'Everyone votes for their favourite one-liner.' },
+  { icon: '📝', text: 'An acronym appears on screen — write the funniest phrase using those letters before time runs out.' },
+  { icon: '✅', text: 'Submit your answer on your phone. The host approves the top 10.' },
+  { icon: '⚡', text: 'Fastest answer bonus! First approved answer each round earns +1 bonus point — be quick!' },
+  { icon: '🗳️', text: 'Everyone votes for their favourite one-liner. You cannot vote for your own.' },
   { icon: '🏆', text: 'Each vote = 1 point. The final KRACRONYM round is worth Double Points!' },
   { icon: '🎁', text: 'Prizes for 1st, 2nd, and 3rd place at the end!' },
 ]
@@ -34,6 +35,7 @@ const HOW_TO_PLAY = [
 const RULES = [
   'Host will narrow down answers to 10 if there are more than 10 players.',
   'Do not use outside app help.',
+  'Submit fast — the first approved answer each round earns a +1 bonus point!',
   'Similar or identical answers? First one in wins. Be unique.',
   'The host sets the appropriateness level: G · PG · PG-13 · R · XXX.',
   'Do not use your answer to harass a real person.',
@@ -62,7 +64,7 @@ export default function WaitingPhase({ game, player, playerCount }: Props) {
   const [currentSlide, setCurrentSlide] = useState<Slide>('how-to-play')
   const [slideIndex, setSlideIndex] = useState(0)
 
-  // Auto-cycle slides every 8 seconds
+  // Auto-cycle slides every 15 seconds
   useEffect(() => {
     const id = setInterval(() => {
       setSlideIndex((prev) => {
@@ -70,7 +72,7 @@ export default function WaitingPhase({ game, player, playerCount }: Props) {
         setCurrentSlide(SLIDES[next])
         return next
       })
-    }, 8000)
+    }, 15000)
     return () => clearInterval(id)
   }, [])
 

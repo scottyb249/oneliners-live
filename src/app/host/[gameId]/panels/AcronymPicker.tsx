@@ -13,6 +13,7 @@ interface Props {
   onCancel: () => void
   onConfirmed: () => void
   onTakeBreak: () => void
+  onToggleDisplay: () => void
   onBackToResults?: () => void
 }
 
@@ -24,6 +25,7 @@ export default function AcronymPicker({
   onCancel,
   onConfirmed,
   onTakeBreak,
+  onToggleDisplay,
   onBackToResults,
 }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -35,6 +37,7 @@ export default function AcronymPicker({
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
 
+  const displayActive = (game as any).display_active !== false
   const usedAcronyms: string[] = game.used_acronyms ?? []
 
   useEffect(() => {
@@ -198,19 +201,29 @@ export default function AcronymPicker({
         {confirming ? 'Starting...' : selected ? `Launch "${selected.acronym}" →` : 'Select an acronym below'}
       </button>
 
-      {/* Secondary actions */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Secondary actions — 3 columns */}
+      <div className="grid grid-cols-3 gap-2">
         <button
           onClick={onTakeBreak}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
+          className="rounded-xl border border-white/20 px-3 py-3 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
         >
-          ☕ Take a Break
+          ☕ Break
         </button>
         <button
           onClick={handleShowLeaderboard}
-          className="rounded-xl border border-yellow-400/40 px-4 py-3 text-sm font-bold text-yellow-400/80 hover:border-yellow-400 hover:text-yellow-400 transition-all"
+          className="rounded-xl border border-yellow-400/40 px-3 py-3 text-sm font-bold text-yellow-400/80 hover:border-yellow-400 hover:text-yellow-400 transition-all"
         >
-          🏆 Show Leaderboard
+          🏆 Standings
+        </button>
+        <button
+          onClick={onToggleDisplay}
+          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
+            displayActive
+              ? 'border-blue-400/40 text-blue-400/80 hover:border-blue-400 hover:text-blue-400'
+              : 'border-orange-400/60 bg-orange-400/10 text-orange-400 hover:bg-orange-400/20'
+          }`}
+        >
+          {displayActive ? '📺 Screen On' : '📺 Screen Off'}
         </button>
       </div>
 

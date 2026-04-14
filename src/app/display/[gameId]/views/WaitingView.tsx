@@ -131,19 +131,23 @@ function HowToPlaySlide() {
   const steps = [
     {
       icon: '📝',
-      text: 'An acronym appears on screen — you have 60 seconds to write the funniest phrase using those letters.',
-    },
-    {
-      icon: '📱',
-      text: 'Everyone is logged in on their phone as a Team, Team Member, or Judge. Each person will vote on their phone.',
-    },
-    {
-      icon: '🏆',
-      text: 'Each vote you receive will be a point. The final KRACRONYM round is worth Double Points!',
+      text: 'An acronym appears on screen — write the funniest phrase using those letters before time runs out.',
     },
     {
       icon: '✅',
       text: 'Submit your answer to the host. The host will approve the top 10 to vote on — inappropriate answers will be removed.',
+    },
+    {
+      icon: '⚡',
+      text: 'Fastest answer bonus! The first approved answer submitted each round earns +1 bonus point — speed matters!',
+    },
+    {
+      icon: '🗳️',
+      text: 'Everyone votes for their favourite one-liner on their phone. You cannot vote for your own answer.',
+    },
+    {
+      icon: '🏆',
+      text: 'Each vote = 1 point. The final KRACRONYM round is worth Double Points!',
     },
     {
       icon: '🎁',
@@ -194,6 +198,7 @@ function RulesSlide() {
   const rules = [
     'Host will narrow down answers to 10 if there are more than 10 players.',
     'Do not use outside app help.',
+    'Submit fast — the first approved answer each round earns a +1 bonus point!',
     'Similar or identical answers? First one in wins. Be unique.',
     'The host sets the appropriateness level based on the crowd: G · PG · PG-13 · R · XXX.',
     'Do not use your answer to harass a real person. Example: B.A.D. = "Bob\'s A D***".',
