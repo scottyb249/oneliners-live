@@ -33,7 +33,7 @@ export default function VotingView({ game }: Props) {
           .eq('round', game.current_round),
       ])
 
-      if (ans) setAnswers(ans as Answer[])
+      if (ans) setAnswers(ans as unknown as Answer[])
 
       const counts: Record<string, number> = {}
       for (const v of votes ?? []) {
