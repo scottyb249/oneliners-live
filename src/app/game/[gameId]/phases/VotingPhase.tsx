@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game, Player, Answer } from '../types'
 import CountdownTimer from '@/app/components/CountdownTimer'
+import { VOTING_TIMER_DURATION } from '@/lib/constants'
 
 interface Props {
   game: Game
@@ -106,7 +107,11 @@ export default function VotingPhase({ game, player }: Props) {
         )}
       </div>
 
-      <CountdownTimer key={`voting-r${game.current_round}`} seconds={90} onExpire={handleExpire} />
+      <CountdownTimer
+        key={`voting-r${game.current_round}`}
+        seconds={VOTING_TIMER_DURATION}
+        onExpire={handleExpire}
+      />
 
       {visibleAnswers.length === 0 ? (
         <p className="text-center text-white/40">No answers available to vote on.</p>

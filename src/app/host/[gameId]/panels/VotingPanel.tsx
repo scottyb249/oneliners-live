@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Game, Answer } from '@/lib/types'
 import CountdownTimer from '@/app/components/CountdownTimer'
+import { VOTING_TIMER_DURATION } from '@/lib/constants'
 
 interface Props {
   game: Game
@@ -103,7 +104,7 @@ export default function VotingPanel({ game }: Props) {
 
       <CountdownTimer
         key={`host-voting-${game.current_round}`}
-        seconds={90}
+        seconds={VOTING_TIMER_DURATION}
         onExpire={handleExpire}
       />
 
