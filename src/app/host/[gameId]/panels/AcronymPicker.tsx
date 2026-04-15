@@ -32,6 +32,7 @@ export default function AcronymPicker({
   const [loading, setLoading] = useState(true)
   const [themeFilter, setThemeFilter] = useState<string>('all')
   const [selected, setSelected] = useState<Prompt | null>(null)
+  const [randomAcronym, setRandomAcronym] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
   const [showLeaderboard, setShowLeaderboard] = useState(false)
@@ -39,6 +40,39 @@ export default function AcronymPicker({
 
   const displayActive = (game as any).display_active !== false
   const usedAcronyms: string[] = game.used_acronyms ?? []
+
+  const CONSONANTS = 'BCDFGHJKLMNPQRSTVWXYZ'
+  const VOWELS = 'AEIOU'
+  const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+  function generateRandomAcronym(count: number): string {
+    // Ensure at least one vowel and one consonant for playability
+    let letters = ''
+    if (count >= 2) {
+      const vowelPos = Math.floor(Math.random() * count)
+      for (let i = 0; i < count; i++) {
+        if (i === vowelPos) {
+          letters += VOWELS[Math.floor(Math.random() * VOWELS.length)]
+        } else {
+          letters += CONSONANTS[Math.floor(Math.random() * CONSONANTS.length)]
+        }
+      }
+    } else {
+      letters = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)]
+    }
+    return letters
+  }
+
+  function handleShuffle() {
+    const acronym = generateRandomAcronym(letterCount)
+    setRandomAcronym(acronym)
+    setSelected(null) // clear any picked prompt — mutual exclusion
+  }
+
+  function handleSelectPrompt(prompt: Prompt) {
+    setSelected(prompt)
+    setRandomAcronym(null) // clear random — mutual exclusion
+  }
 
   useEffect(() => {
     async function load() {
@@ -116,17 +150,20 @@ export default function AcronymPicker({
   }
 
   async function handleConfirm() {
-    if (!selected || confirming) return
+    // Either a picked prompt or a random acronym must be active
+    if ((!selected && !randomAcronym) || confirming) return
     setConfirming(true)
     setError('')
 
-    const updatedUsed = [...usedAcronyms, selected.acronym]
-    const duration = getTimerDuration(selected.acronym, isFinalRound)
+    const acronymToLaunch = selected ? selected.acronym : randomAcronym!
+    // Random acronyms are NOT added to used_acronyms so they don't block future picks
+    const updatedUsed = selected ? [...usedAcronyms, selected.acronym] : usedAcronyms
+    const duration = getTimerDuration(acronymToLaunch, isFinalRound)
 
     const { error: updateErr } = await supabase
       .from('games')
       .update({
-        current_acronym: selected.acronym,
+        current_acronym: acronymToLaunch,
         current_round: targetRound,
         status: 'active',
         round_started_at: new Date().toISOString(),
@@ -151,6 +188,9 @@ export default function AcronymPicker({
   const filtered = themeFilter === 'all'
     ? prompts
     : prompts.filter((p) => (p.theme ?? 'Uncategorized') === themeFilter)
+
+  // The active acronym for the launch button label
+  const activeAcronym = randomAcronym ?? selected?.acronym ?? null
 
   if (showLeaderboard) {
     return (
@@ -192,13 +232,33 @@ export default function AcronymPicker({
         </button>
       </div>
 
+      {/* Random acronym display — shows when shuffle has been used */}
+      {randomAcronym && (
+        <div className="flex items-center justify-between rounded-xl border border-purple-400/40 bg-purple-400/10 px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-purple-400">Random Acronym</p>
+            <p className="text-2xl font-black tracking-widest text-white mt-0.5">{randomAcronym}</p>
+          </div>
+          <button
+            onClick={handleShuffle}
+            className="rounded-lg border border-purple-400/40 px-3 py-2 text-sm font-bold text-purple-400 hover:border-purple-400 hover:bg-purple-400/20 transition-all"
+          >
+            🎲 Shuffle
+          </button>
+        </div>
+      )}
+
       {/* PRIMARY: Launch button at top */}
       <button
         onClick={handleConfirm}
-        disabled={!selected || confirming}
+        disabled={!activeAcronym || confirming}
         className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {confirming ? 'Starting...' : selected ? `Launch "${selected.acronym}" →` : 'Select an acronym below'}
+        {confirming
+          ? 'Starting...'
+          : activeAcronym
+          ? `Launch "${activeAcronym}" →`
+          : 'Select an acronym below'}
       </button>
 
       {/* Secondary actions — 3 columns */}
@@ -248,22 +308,29 @@ export default function AcronymPicker({
 
       {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-      {/* Theme filter */}
-      {themes.length > 2 && (
-        <div className="flex flex-wrap gap-2">
-          {themes.map((theme) => (
-            <button
-              key={theme}
-              onClick={() => setThemeFilter(theme)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                themeFilter === theme ? 'bg-yellow-400 text-black' : 'bg-white/10 text-white/60 hover:bg-white/20'
-              }`}
-            >
-              {theme === 'all' ? 'All' : theme}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Theme filter + shuffle button row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {themes.length > 2 && themes.map((theme) => (
+          <button
+            key={theme}
+            onClick={() => setThemeFilter(theme)}
+            className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${
+              themeFilter === theme ? 'bg-yellow-400 text-black' : 'bg-white/10 text-white/60 hover:bg-white/20'
+            }`}
+          >
+            {theme === 'all' ? 'All' : theme}
+          </button>
+        ))}
+        {/* Shuffle button — always visible, sits at end of filter row */}
+        {!randomAcronym && (
+          <button
+            onClick={handleShuffle}
+            className="ml-auto rounded-full border border-purple-400/40 px-3 py-1 text-sm font-medium text-purple-400 hover:border-purple-400 hover:bg-purple-400/10 transition-all"
+          >
+            🎲 Random
+          </button>
+        )}
+      </div>
 
       {/* Acronym list */}
       {loading ? (
@@ -278,7 +345,7 @@ export default function AcronymPicker({
             return (
               <button
                 key={prompt.id}
-                onClick={() => !alreadyUsed && setSelected(prompt)}
+                onClick={() => !alreadyUsed && handleSelectPrompt(prompt)}
                 disabled={alreadyUsed}
                 className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
                   alreadyUsed
