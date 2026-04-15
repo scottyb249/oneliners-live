@@ -16,7 +16,7 @@ export default function ActiveView({ game, answerCount }: Props) {
     letterCount === 5 ? 'clamp(3rem, 14vw, 12rem)' :
     'clamp(2.5rem, 10vw, 9rem)'
 
-  const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
+  const timerSeconds = game.round_duration ?? (game.is_final_round ? 180 : 90)
 
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center gap-6 px-12">

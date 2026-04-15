@@ -60,8 +60,7 @@ export default function DisplayClient({ gameId }: Props) {
           const updated = payload.new as Game
 
           // Only close display when host explicitly sets display_close flag
-          // This prevents false-triggers when host navigates back to lobby mid-game
-          if ((updated as any).display_close === true) {
+          if (updated.display_close === true) {
             setClosed(true)
             return
           }
@@ -120,7 +119,7 @@ export default function DisplayClient({ gameId }: Props) {
   }
 
   // Display paused by host — show holding screen
-  if ((game as any).display_active === false) {
+  if (game.display_active === false) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 gap-6 text-center px-8">
         <img src="/logo.png" alt="O.N.E. Liners Live" className="w-48 opacity-60" />

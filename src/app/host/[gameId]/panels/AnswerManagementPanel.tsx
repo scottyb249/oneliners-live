@@ -13,6 +13,9 @@ interface Props {
 export default function AnswerManagementPanel({ game }: Props) {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [launching, setLaunching] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [saving, setSaving] = useState(false)
 
   // Load existing answers + subscribe to new ones
   useEffect(() => {
@@ -82,6 +85,37 @@ export default function AnswerManagementPanel({ game }: Props) {
     await supabase.from('answers').update({ approved: newVal }).eq('id', answer.id)
   }
 
+  function startEdit(answer: Answer) {
+    setEditingId(answer.id)
+    setEditingContent(answer.content)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditingContent('')
+  }
+
+  async function saveEdit(answer: Answer) {
+    const trimmed = editingContent.trim()
+    if (!trimmed || trimmed === answer.content) {
+      cancelEdit()
+      return
+    }
+    setSaving(true)
+
+    await supabase
+      .from('answers')
+      .update({ content: trimmed })
+      .eq('id', answer.id)
+
+    setAnswers((prev) =>
+      prev.map((a) => (a.id === answer.id ? { ...a, content: trimmed } : a)),
+    )
+    setSaving(false)
+    setEditingId(null)
+    setEditingContent('')
+  }
+
   async function launchVoting() {
     if (approvedCount === 0 || launching) return
     setLaunching(true)
@@ -143,38 +177,82 @@ export default function AnswerManagementPanel({ game }: Props) {
         <div className="space-y-2">
           {answers.map((answer, i) => {
             const isApproved = answer.approved
-            const isFastest = (answer as any).is_fastest
+            const isFastest = answer.is_fastest
             const disableApprove = !isApproved && atLimit
+            const isEditing = editingId === answer.id
 
             return (
               <div
                 key={answer.id}
-                className={`flex items-start gap-3 rounded-xl border px-4 py-3 transition-all ${
+                className={`rounded-xl border px-4 py-3 transition-all ${
                   isApproved
                     ? 'border-green-500/40 bg-green-500/10'
                     : 'border-white/10 bg-white/5'
-                } ${disableApprove ? 'opacity-40' : ''}`}
+                } ${disableApprove && !isEditing ? 'opacity-40' : ''}`}
               >
-                <span className="mt-0.5 text-xs font-bold text-white/20 w-5 shrink-0">
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white leading-relaxed">{answer.content}</p>
-                  {isFastest && (
-                    <p className="text-xs text-yellow-400 font-semibold mt-0.5">⚡ Fastest Answer +1</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => toggleApprove(answer)}
-                  disabled={disableApprove}
-                  className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                    isApproved
-                      ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400'
-                      : 'bg-white/10 text-white/40 hover:bg-green-500/20 hover:text-green-400 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {isApproved ? '✓ Approved' : 'Approve'}
-                </button>
+                {isEditing ? (
+                  /* Edit mode */
+                  <div className="space-y-2">
+                    <textarea
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      maxLength={200}
+                      rows={2}
+                      autoFocus
+                      className="w-full resize-none rounded-lg border border-yellow-400/40 bg-white/10 px-3 py-2 text-sm text-white focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400/30"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="flex-1 rounded-lg border border-white/20 py-1.5 text-xs font-bold text-white/50 hover:text-white transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => saveEdit(answer)}
+                        disabled={saving || !editingContent.trim() || editingContent.trim() === answer.content}
+                        className="flex-1 rounded-lg bg-yellow-400 py-1.5 text-xs font-bold text-black hover:bg-yellow-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {saving ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Normal display mode */
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-xs font-bold text-white/20 w-5 shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white leading-relaxed">{answer.content}</p>
+                      {isFastest && (
+                        <p className="text-xs text-yellow-400 font-semibold mt-0.5">⚡ Fastest Answer +1</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Edit button — only show before voting launches */}
+                      <button
+                        onClick={() => startEdit(answer)}
+                        className="rounded-lg px-2 py-1.5 text-xs font-bold text-white/30 hover:bg-white/10 hover:text-white/70 transition-all"
+                        title="Edit answer"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => toggleApprove(answer)}
+                        disabled={disableApprove}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                          isApproved
+                            ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400'
+                            : 'bg-white/10 text-white/40 hover:bg-green-500/20 hover:text-green-400 disabled:cursor-not-allowed'
+                        }`}
+                      >
+                        {isApproved ? '✓ Approved' : 'Approve'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}

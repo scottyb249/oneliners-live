@@ -119,10 +119,17 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }
 
   async function handleToggleDisplay() {
-    const currentlyActive = (game as any)?.display_active !== false
+    const currentlyActive = game?.display_active !== false
     await supabase
       .from('games')
       .update({ display_active: !currentlyActive })
+      .eq('id', gameId)
+  }
+
+  async function handleCloseDisplay() {
+    await supabase
+      .from('games')
+      .update({ display_close: true })
       .eq('id', gameId)
   }
 
@@ -150,6 +157,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         reveal_index: -1,
         podium_step: 0,
         display_active: true,
+        display_close: false,
       })
       .eq('id', gameId)
   }
@@ -218,7 +226,16 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     <main className="flex min-h-screen flex-col bg-zinc-950">
       <TopBar game={game} />
 
-      <div className="flex justify-end px-4 pt-3">
+      <div className="flex justify-end gap-2 px-4 pt-3">
+        {/* Close Display button — only show when display is active */}
+        {game.display_active !== false && (
+          <button
+            onClick={handleCloseDisplay}
+            className="rounded-lg border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/30 hover:border-red-500/40 hover:text-red-400 transition-all"
+          >
+            Close Display
+          </button>
+        )}
         <button
           onClick={() => setShowEndConfirm(true)}
           className="rounded-lg border border-red-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-red-400 hover:border-red-400 hover:text-red-300 transition-all"

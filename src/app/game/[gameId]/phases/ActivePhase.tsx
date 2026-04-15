@@ -17,6 +17,7 @@ export default function ActivePhase({ game, player }: Props) {
   const [submitted, setSubmitted] = useState(false)
   const [editing, setEditing] = useState(false)
   const [approved, setApproved] = useState(false)
+  const [justApproved, setJustApproved] = useState(false)
   const [locked, setLocked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -35,7 +36,7 @@ export default function ActivePhase({ game, player }: Props) {
     letterCount === 5 ? '3.25rem' :
     '2.5rem'
 
-  const timerSeconds = (game as any).round_duration ?? (game.is_final_round ? 180 : 90)
+  const timerSeconds = game.round_duration ?? (game.is_final_round ? 180 : 90)
 
   // Check for existing answer on load / round change
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function ActivePhase({ game, player }: Props) {
         setSubmittedContent('')
         setAnswer('')
         setApproved(false)
+        setJustApproved(false)
         setSubmitted(false)
         setEditing(false)
         setLocked(false)
@@ -68,6 +70,43 @@ export default function ActivePhase({ game, player }: Props) {
     }
     checkExisting()
   }, [game.id, game.current_round, player.id])
+
+  // Realtime subscription — watch for host approving this player's answer
+  useEffect(() => {
+    if (!answerId) return
+
+    const channel = supabase
+      .channel(`approval-${answerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'answers',
+          filter: `id=eq.${answerId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { approved: boolean; content: string }
+          // If host edited the content, reflect that too
+          if (updated.content && updated.content !== submittedContent) {
+            setSubmittedContent(updated.content)
+            setAnswer(updated.content)
+          }
+          if (updated.approved && !approved) {
+            setApproved(true)
+            setJustApproved(true)
+            setEditing(false)
+            // Clear the "just approved" flash after 3 seconds
+            setTimeout(() => setJustApproved(false), 3000)
+          } else if (!updated.approved) {
+            setApproved(false)
+          }
+        },
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [answerId, approved, submittedContent])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -305,6 +344,22 @@ export default function ActivePhase({ game, player }: Props) {
             <p className="text-white font-semibold leading-snug">{submittedContent}</p>
           </div>
 
+          {/* Approval notification — flashes green then settles */}
+          {approved && (
+            <div className={`rounded-xl border px-4 py-4 text-center transition-all duration-500 ${
+              justApproved
+                ? 'border-green-400/60 bg-green-400/20'
+                : 'border-yellow-400/30 bg-yellow-400/5'
+            }`}>
+              <p className="text-2xl mb-1">✅</p>
+              <p className={`text-sm font-bold transition-colors duration-500 ${
+                justApproved ? 'text-green-300' : 'text-yellow-400'
+              }`}>
+                {justApproved ? 'Your answer was approved!' : 'Approved by host — get ready to vote!'}
+              </p>
+            </div>
+          )}
+
           {!locked && !approved && (
             <button
               onClick={handleEdit}
@@ -312,12 +367,6 @@ export default function ActivePhase({ game, player }: Props) {
             >
               ✏️ Edit Answer
             </button>
-          )}
-
-          {approved && (
-            <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-4 py-3 text-center">
-              <p className="text-sm font-semibold text-yellow-400">✅ Approved by host — get ready to vote!</p>
-            </div>
           )}
 
           {locked && !approved && (

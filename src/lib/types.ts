@@ -16,6 +16,9 @@ export interface Game {
   display_slide: number
   reveal_index: number
   podium_step: number
+  round_duration: number | null
+  display_active: boolean
+  display_close: boolean
 }
 
 export interface Player {
@@ -40,6 +43,7 @@ export interface Answer {
   submitted_at: string
   approved: boolean
   is_tiebreaker: boolean
+  is_fastest: boolean
   players?: {
     name: string
     team_name: string | null
