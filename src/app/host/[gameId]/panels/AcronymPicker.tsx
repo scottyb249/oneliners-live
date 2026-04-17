@@ -219,8 +219,8 @@ export default function AcronymPicker({
           : 'Select an acronym below'}
       </button>
 
-      {/* Secondary actions — 3 columns */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Secondary actions — 2 columns */}
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onTakeBreak}
           className="rounded-xl border border-white/20 px-3 py-3 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
@@ -236,15 +236,6 @@ export default function AcronymPicker({
           }`}
         >
           {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
-        </button>
-        <button
-          onClick={async () => {
-            await supabase.from('games').update({ display_close: false }).eq('id', game.id)
-            window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')
-          }}
-          className="rounded-xl border border-blue-400/40 px-3 py-3 text-sm font-bold text-blue-400/80 hover:border-blue-400 hover:text-blue-400 transition-all"
-        >
-          📺 Open Display
         </button>
       </div>
 
