@@ -26,11 +26,6 @@ interface Props {
   game: Game
 }
 
-interface LeaderboardEntry {
-  name: string
-  score: number
-}
-
 interface RoleCounts {
   individual: number
   team_leader: number
@@ -39,10 +34,6 @@ interface RoleCounts {
 }
 
 export default function TopBar({ game }: Props) {
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [pushingToDisplay, setPushingToDisplay] = useState(false)
   const [roleCounts, setRoleCounts] = useState<RoleCounts>({
     individual: 0,
     team_leader: 0,
@@ -50,7 +41,6 @@ export default function TopBar({ game }: Props) {
     crowd_voter: 0,
   })
 
-  const displayingLeaderboard = game.podium_step >= 1
   const answerablePlayers = roleCounts.individual + roleCounts.team_leader
   const noAnswerablePlayers = answerablePlayers === 0 && game.status === 'active'
 
@@ -85,37 +75,6 @@ export default function TopBar({ game }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [game.id])
 
-  async function handleOpenLeaderboard() {
-    setShowLeaderboard(true)
-    setLoading(true)
-    const { data } = await supabase
-      .from('players')
-      .select('name, score, role, team_name')
-      .eq('game_id', game.id)
-      .in('role', ['individual', 'team_leader'])
-      .order('score', { ascending: false })
-
-    if (data) {
-      setLeaderboard(data.map((p) => ({ name: p.team_name ?? p.name, score: p.score })))
-    }
-    setLoading(false)
-  }
-
-  async function handleToggleDisplayLeaderboard() {
-    setPushingToDisplay(true)
-    await supabase
-      .from('games')
-      .update({ podium_step: displayingLeaderboard ? 0 : 1 })
-      .eq('id', game.id)
-    setPushingToDisplay(false)
-  }
-
-  async function handleClose() {
-    if (displayingLeaderboard) {
-      await supabase.from('games').update({ podium_step: 0 }).eq('id', game.id)
-    }
-    setShowLeaderboard(false)
-  }
 
   return (
     <>
@@ -134,13 +93,6 @@ export default function TopBar({ game }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleOpenLeaderboard}
-              className="rounded-full border border-yellow-400/30 px-3 py-1 text-xs font-semibold text-yellow-400/70 hover:border-yellow-400 hover:text-yellow-400 transition-all"
-            >
-              🏆 Standings
-            </button>
-
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLORS[game.status] ?? 'bg-zinc-700 text-white/60'}`}>
               {STATUS_LABELS[game.status] ?? game.status}
             </span>
@@ -181,76 +133,6 @@ export default function TopBar({ game }: Props) {
         </div>
       </div>
 
-      {/* Leaderboard modal */}
-      {showLeaderboard && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-          onClick={handleClose}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
-                Current Standings
-              </p>
-              <button
-                onClick={handleClose}
-                className="text-sm text-white/30 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {loading ? (
-              <p className="text-center text-white/40 animate-pulse py-4">Loading...</p>
-            ) : leaderboard.length === 0 ? (
-              <p className="text-center text-white/40 py-4">No players yet.</p>
-            ) : (
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                {leaderboard.map((entry, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                      i === 0 ? 'border-yellow-400/40 bg-yellow-400/10' : 'border-white/10 bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-yellow-400 w-5">#{i + 1}</span>
-                      <span className="font-bold text-white">{entry.name}</span>
-                    </div>
-                    <span className="text-lg font-black text-white">{entry.score}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button
-              onClick={handleToggleDisplayLeaderboard}
-              disabled={pushingToDisplay || loading}
-              className={`w-full rounded-xl border py-3 text-sm font-bold transition-all disabled:opacity-50 ${
-                displayingLeaderboard
-                  ? 'border-green-400/60 bg-green-400/10 text-green-400 hover:bg-green-400/20'
-                  : 'border-white/20 text-white/60 hover:border-white/40 hover:text-white'
-              }`}
-            >
-              {pushingToDisplay
-                ? 'Updating...'
-                : displayingLeaderboard
-                ? '📺 Showing on Display — Tap to Hide'
-                : '📺 Show on Display Screen'}
-            </button>
-
-            <button
-              onClick={handleClose}
-              className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/50 hover:text-white transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
 }

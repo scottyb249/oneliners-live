@@ -45,8 +45,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const [actionLoading, setActionLoading] = useState(false)
   const [resolvedTies, setResolvedTies] = useState<ResolvedTie[]>([])
   const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [leaderboardOnDisplay, setLeaderboardOnDisplay] = useState(false)
 
   const revealIndex = game.reveal_index ?? -1
   const podiumStep = game.podium_step ?? 0
@@ -191,15 +189,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
     await supabase.from('games').update({ podium_step: next }).eq('id', game.id)
   }
 
-  async function toggleLeaderboardOnDisplay() {
-    const next = !leaderboardOnDisplay
-    setLeaderboardOnDisplay(next)
-    if (!isFinalResults) {
-      await supabase.from('games').update({ podium_step: next ? 1 : 0 }).eq('id', game.id)
-    }
-    setShowLeaderboard(next)
-  }
-
   async function endGame() {
     if (actionLoading) return
     setActionLoading(true)
@@ -317,44 +306,6 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
         })}
       </div>
 
-      {/* Host leaderboard toggle (non-final rounds) */}
-      {!isFinalResults && (
-        <button
-          onClick={toggleLeaderboardOnDisplay}
-          className={`w-full rounded-xl border py-3 text-sm font-bold transition-all ${
-            leaderboardOnDisplay
-              ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
-              : 'border-white/20 text-white/60 hover:border-white/40 hover:text-white'
-          }`}
-        >
-          {leaderboardOnDisplay ? '📊 Hide Leaderboard on Display' : '📊 Show Leaderboard on Display'}
-        </button>
-      )}
-
-      {/* Host-side leaderboard preview */}
-      {showLeaderboard && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-3">
-            Leaderboard
-          </p>
-          {leaderboard.map((player, i) => {
-            const displayName =
-              player.role === 'team_leader' && player.team_name ? player.team_name : player.name
-            return (
-              <div key={player.id} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-white/30 w-4">#{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                  {player.role === 'team_leader' && player.team_name && (
-                    <p className="text-xs text-white/30 truncate">led by {player.name}</p>
-                  )}
-                </div>
-                <p className="text-sm font-black text-white">{player.score}</p>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {/* Speed resolution notice */}
       {isFinalResults && resolvedTies.length > 0 && (
