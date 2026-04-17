@@ -126,6 +126,13 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       .eq('id', gameId)
   }
 
+  async function handleToggleLeaderboard() {
+    await supabase
+      .from('games')
+      .update({ show_leaderboard: !game?.show_leaderboard })
+      .eq('id', gameId)
+  }
+
   async function handleCloseDisplay() {
     await supabase
       .from('games')
@@ -158,6 +165,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         podium_step: 0,
         display_active: true,
         display_close: false,
+        show_leaderboard: false,
       })
       .eq('id', gameId)
   }
@@ -227,6 +235,18 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       <TopBar game={game} />
 
       <div className="flex justify-end gap-2 px-4 pt-3">
+        {/* Leaderboard toggle */}
+        <button
+          onClick={handleToggleLeaderboard}
+          className={`rounded-lg border px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all ${
+            game.show_leaderboard
+              ? 'border-yellow-400/60 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20'
+              : 'border-white/10 text-white/30 hover:border-yellow-400/40 hover:text-yellow-400'
+          }`}
+        >
+          {game.show_leaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
+        </button>
+
         {/* Close Display button — only show when display is active */}
         {game.display_active !== false && (
           <button

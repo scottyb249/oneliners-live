@@ -19,6 +19,7 @@ export interface Game {
   round_duration: number | null
   display_active: boolean
   display_close: boolean
+  show_leaderboard: boolean
 }
 
 export interface Player {

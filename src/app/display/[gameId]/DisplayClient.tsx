@@ -20,7 +20,22 @@ export default function DisplayClient({ gameId }: Props) {
   const [answerCount, setAnswerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [closed, setClosed] = useState(false)
+  const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
   const prevStatusRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!game?.show_leaderboard) return
+    async function fetchLeaderboard() {
+      const { data } = await supabase
+        .from('players')
+        .select('name, score')
+        .eq('game_id', gameId)
+        .eq('is_host', false)
+        .order('score', { ascending: false })
+      setLeaderboard(data ?? [])
+    }
+    fetchLeaderboard()
+  }, [game?.show_leaderboard, gameId])
 
   // Initial load
   useEffect(() => {
@@ -131,12 +146,45 @@ export default function DisplayClient({ gameId }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       <div className="flex flex-1 flex-col">
-        {game.status === 'waiting' && <WaitingView game={game} />}
-        {game.status === 'break' && <BreakView game={game} />}
-        {game.status === 'active' && <ActiveView game={game} answerCount={answerCount} />}
-        {game.status === 'voting' && <VotingView game={game} />}
-        {game.status === 'results' && <ResultsView game={game} />}
-        {game.status === 'ended' && <EndedView game={game} />}
+        {game.show_leaderboard ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-12 gap-8">
+            <p className="text-4xl font-black uppercase tracking-widest text-yellow-400">Leaderboard</p>
+            <div className="w-full max-w-2xl flex flex-col gap-3">
+              {leaderboard.map((p, i) => (
+                <div
+                  key={p.name}
+                  className={`flex items-center gap-6 rounded-2xl px-8 py-5 border ${
+                    i === 0
+                      ? 'border-yellow-400/40 bg-yellow-400/10'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <span className={`text-3xl font-black w-10 text-center ${
+                    i === 0 ? 'text-yellow-400' : 'text-white/30'
+                  }`}>
+                    {i === 0 ? '🏆' : `${i + 1}`}
+                  </span>
+                  <span className="flex-1 text-2xl font-bold text-white truncate">{p.name}</span>
+                  <span className={`text-3xl font-black ${i === 0 ? 'text-yellow-400' : 'text-white/60'}`}>
+                    {p.score}
+                  </span>
+                </div>
+              ))}
+              {leaderboard.length === 0 && (
+                <p className="text-center text-white/40 text-xl py-12">No scores yet</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            {game.status === 'waiting' && <WaitingView game={game} />}
+            {game.status === 'break' && <BreakView game={game} />}
+            {game.status === 'active' && <ActiveView game={game} answerCount={answerCount} />}
+            {game.status === 'voting' && <VotingView game={game} />}
+            {game.status === 'results' && <ResultsView game={game} />}
+            {game.status === 'ended' && <EndedView game={game} />}
+          </>
+        )}
       </div>
       <BottomBar game={game} />
     </div>
