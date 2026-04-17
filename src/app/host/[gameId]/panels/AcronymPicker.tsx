@@ -238,7 +238,10 @@ export default function AcronymPicker({
           {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
         </button>
         <button
-          onClick={() => window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')}
+          onClick={async () => {
+            await supabase.from('games').update({ display_close: false }).eq('id', game.id)
+            window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')
+          }}
           className="rounded-xl border border-blue-400/40 px-3 py-3 text-sm font-bold text-blue-400/80 hover:border-blue-400 hover:text-blue-400 transition-all"
         >
           📺 Open Display
