@@ -34,6 +34,7 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [leaving, setLeaving] = useState(false)
   const [showAbandonedBanner, setShowAbandonedBanner] = useState(false)
   const [staleMessage, setStaleMessage] = useState('')
+  const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
 
   const lastActivityRef = useRef<number>(Date.now())
 
@@ -115,6 +116,21 @@ export default function GameClient({ gameId, playerId }: Props) {
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [gameId])
+
+  // Fetch leaderboard whenever show_leaderboard toggles on
+  useEffect(() => {
+    if (!game?.show_leaderboard) return
+    async function fetchLeaderboard() {
+      const { data } = await supabase
+        .from('players')
+        .select('name, score')
+        .eq('game_id', gameId)
+        .eq('is_host', false)
+        .order('score', { ascending: false })
+      setLeaderboard(data ?? [])
+    }
+    fetchLeaderboard()
+  }, [game?.show_leaderboard, gameId])
 
   // Abandonment check
   useEffect(() => {
@@ -200,27 +216,63 @@ export default function GameClient({ gameId, playerId }: Props) {
 
       {/* Phase content */}
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
-        {game.status === 'waiting' && (
-          <WaitingPhase game={game} player={player} playerCount={playerCount} />
-        )}
-        {game.status === 'break' && (
-          <div className="flex flex-col items-center gap-6 text-center py-12">
-            <p className="text-5xl">☕</p>
-            <p className="text-2xl font-black text-white">We&apos;ll Be Right Back!</p>
-            <p className="text-white/50 font-medium">
-              O.N.E. Liners Live is on a short break.<br />
-              Hang tight — the game will resume shortly.
-            </p>
-            <div className="flex items-center gap-2 mt-4">
-              <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
-              <p className="text-sm text-white/30">Waiting for host to resume...</p>
+        {game.show_leaderboard ? (
+          <div className="flex w-full flex-col gap-4">
+            <div className="text-center">
+              <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">Leaderboard</p>
+              <p className="text-xs text-white/30 mt-1">Round {game.current_round}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {leaderboard.map((p, i) => (
+                <div
+                  key={p.name}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${
+                    i === 0
+                      ? 'border-yellow-400/40 bg-yellow-400/10'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <span className={`text-lg font-black w-7 text-center ${
+                    i === 0 ? 'text-yellow-400' : 'text-white/30'
+                  }`}>
+                    {i === 0 ? '🏆' : `${i + 1}`}
+                  </span>
+                  <span className="flex-1 font-semibold text-white truncate">{p.name}</span>
+                  <span className={`font-black text-lg ${i === 0 ? 'text-yellow-400' : 'text-white/60'}`}>
+                    {p.score}
+                  </span>
+                </div>
+              ))}
+              {leaderboard.length === 0 && (
+                <p className="text-center text-white/30 text-sm py-6">No scores yet</p>
+              )}
             </div>
           </div>
+        ) : (
+          <>
+            {game.status === 'waiting' && (
+              <WaitingPhase game={game} player={player} playerCount={playerCount} />
+            )}
+            {game.status === 'break' && (
+              <div className="flex flex-col items-center gap-6 text-center py-12">
+                <p className="text-5xl">☕</p>
+                <p className="text-2xl font-black text-white">We&apos;ll Be Right Back!</p>
+                <p className="text-white/50 font-medium">
+                  O.N.E. Liners Live is on a short break.<br />
+                  Hang tight — the game will resume shortly.
+                </p>
+                <div className="flex items-center gap-2 mt-4">
+                  <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+                  <p className="text-sm text-white/30">Waiting for host to resume...</p>
+                </div>
+              </div>
+            )}
+            {game.status === 'active' && <ActivePhase game={game} player={player} />}
+            {game.status === 'voting' && <VotingPhase game={game} player={player} />}
+            {game.status === 'results' && <ResultsPhase game={game} player={player} />}
+            {game.status === 'ended' && <EndedPhase game={game} player={player} />}
+          </>
         )}
-        {game.status === 'active' && <ActivePhase game={game} player={player} />}
-        {game.status === 'voting' && <VotingPhase game={game} player={player} />}
-        {game.status === 'results' && <ResultsPhase game={game} player={player} />}
-        {game.status === 'ended' && <EndedPhase game={game} player={player} />}
       </div>
 
       {/* Leave confirmation modal */}

@@ -21,22 +21,6 @@ export default function ActivePhase({ game, player }: Props) {
   const [locked, setLocked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
-
-  useEffect(() => {
-    if (!game.show_leaderboard) return
-    async function fetchLeaderboard() {
-      const { data } = await supabase
-        .from('players')
-        .select('name, score')
-        .eq('game_id', game.id)
-        .eq('is_host', false)
-        .order('score', { ascending: false })
-      setLeaderboard(data ?? [])
-    }
-    fetchLeaderboard()
-  }, [game.show_leaderboard, game.id])
-
   const handleExpire = useCallback(() => setLocked(true), [])
 
   const canSubmit = player.role === 'individual' || player.role === 'team_leader'
@@ -191,42 +175,6 @@ export default function ActivePhase({ game, player }: Props) {
     setAnswer(submittedContent)
     setEditing(false)
     setError('')
-  }
-
-  if (game.show_leaderboard) {
-    return (
-      <div className="flex w-full flex-col gap-4">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">Leaderboard</p>
-          <p className="text-xs text-white/30 mt-1">Round {game.current_round}</p>
-        </div>
-        <div className="flex flex-col gap-2">
-          {leaderboard.map((p, i) => (
-            <div
-              key={p.name}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${
-                i === 0
-                  ? 'border-yellow-400/40 bg-yellow-400/10'
-                  : 'border-white/10 bg-white/5'
-              }`}
-            >
-              <span className={`text-lg font-black w-7 text-center ${
-                i === 0 ? 'text-yellow-400' : 'text-white/30'
-              }`}>
-                {i === 0 ? '🏆' : `${i + 1}`}
-              </span>
-              <span className="flex-1 font-semibold text-white truncate">{p.name}</span>
-              <span className={`font-black text-lg ${i === 0 ? 'text-yellow-400' : 'text-white/60'}`}>
-                {p.score}
-              </span>
-            </div>
-          ))}
-          {leaderboard.length === 0 && (
-            <p className="text-center text-white/30 text-sm py-6">No scores yet</p>
-          )}
-        </div>
-      </div>
-    )
   }
 
   if (!canSubmit) {

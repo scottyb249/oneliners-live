@@ -14,6 +14,7 @@ interface Props {
   onConfirmed: () => void
   onTakeBreak: () => void
   onToggleDisplay: () => void
+  onToggleLeaderboard: () => void
   onBackToResults?: () => void
 }
 
@@ -26,6 +27,7 @@ export default function AcronymPicker({
   onConfirmed,
   onTakeBreak,
   onToggleDisplay,
+  onToggleLeaderboard,
   onBackToResults,
 }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -35,8 +37,6 @@ export default function AcronymPicker({
   const [randomAcronym, setRandomAcronym] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
 
   const displayActive = (game as any).display_active !== false
   const usedAcronyms: string[] = game.used_acronyms ?? []
@@ -88,20 +88,6 @@ export default function AcronymPicker({
     }
     load()
   }, [letterCount])
-
-  async function handleShowLeaderboard() {
-    const { data } = await supabase
-      .from('players')
-      .select('name, score, role, team_name')
-      .eq('game_id', game.id)
-      .in('role', ['individual', 'team_leader'])
-      .order('score', { ascending: false })
-
-    if (data) {
-      setLeaderboard(data.map((p) => ({ name: p.team_name ?? p.name, score: p.score })))
-    }
-    setShowLeaderboard(true)
-  }
 
   async function handleLaunchKracronym() {
     if (confirming) return
@@ -192,31 +178,6 @@ export default function AcronymPicker({
   // The active acronym for the launch button label
   const activeAcronym = randomAcronym ?? selected?.acronym ?? null
 
-  if (showLeaderboard) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">Current Standings</p>
-          <button onClick={() => setShowLeaderboard(false)} className="text-sm text-white/30 hover:text-white transition-colors">← Back</button>
-        </div>
-        <div className="space-y-2">
-          {leaderboard.map((entry, i) => (
-            <div key={i} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-yellow-400">#{i + 1}</span>
-                <span className="font-bold text-white">{entry.name}</span>
-              </div>
-              <span className="text-lg font-black text-white">{entry.score}</span>
-            </div>
-          ))}
-        </div>
-        <button onClick={() => setShowLeaderboard(false)} className="w-full rounded-xl border border-white/20 py-3 text-sm font-bold text-white/60 hover:text-white transition-colors">
-          ← Back to Acronym Picker
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -270,10 +231,14 @@ export default function AcronymPicker({
           ☕ Break
         </button>
         <button
-          onClick={handleShowLeaderboard}
-          className="rounded-xl border border-yellow-400/40 px-3 py-3 text-sm font-bold text-yellow-400/80 hover:border-yellow-400 hover:text-yellow-400 transition-all"
+          onClick={onToggleLeaderboard}
+          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
+            game.show_leaderboard
+              ? 'border-yellow-400/60 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20'
+              : 'border-yellow-400/40 text-yellow-400/80 hover:border-yellow-400 hover:text-yellow-400'
+          }`}
         >
-          🏆 Standings
+          {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
         </button>
         <button
           onClick={onToggleDisplay}
