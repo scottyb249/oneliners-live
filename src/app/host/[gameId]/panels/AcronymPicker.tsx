@@ -13,7 +13,6 @@ interface Props {
   onCancel: () => void
   onConfirmed: () => void
   onTakeBreak: () => void
-  onToggleDisplay: () => void
   onToggleLeaderboard: () => void
   onBackToResults?: () => void
 }
@@ -26,7 +25,6 @@ export default function AcronymPicker({
   onCancel,
   onConfirmed,
   onTakeBreak,
-  onToggleDisplay,
   onToggleLeaderboard,
   onBackToResults,
 }: Props) {
@@ -38,7 +36,6 @@ export default function AcronymPicker({
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
 
-  const displayActive = (game as any).display_active !== false
   const usedAcronyms: string[] = game.used_acronyms ?? []
 
   const CONSONANTS = 'BCDFGHJKLMNPQRSTVWXYZ'
@@ -241,14 +238,10 @@ export default function AcronymPicker({
           {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
         </button>
         <button
-          onClick={onToggleDisplay}
-          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
-            displayActive
-              ? 'border-blue-400/40 text-blue-400/80 hover:border-blue-400 hover:text-blue-400'
-              : 'border-orange-400/60 bg-orange-400/10 text-orange-400 hover:bg-orange-400/20'
-          }`}
+          onClick={() => window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')}
+          className="rounded-xl border border-blue-400/40 px-3 py-3 text-sm font-bold text-blue-400/80 hover:border-blue-400 hover:text-blue-400 transition-all"
         >
-          {displayActive ? '📺 Screen On' : '📺 Screen Off'}
+          📺 Open Display
         </button>
       </div>
 

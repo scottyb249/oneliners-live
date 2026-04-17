@@ -274,7 +274,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             onCancel={() => setShowAcronymPicker(false)}
             onConfirmed={() => setShowAcronymPicker(false)}
             onTakeBreak={handleTakeBreak}
-            onToggleDisplay={handleToggleDisplay}
             onToggleLeaderboard={handleToggleLeaderboard}
             onBackToResults={pickerCameFromResults ? handleBackToResults : undefined}
           />
