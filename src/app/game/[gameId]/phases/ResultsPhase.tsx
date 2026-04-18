@@ -79,8 +79,9 @@ export default function ResultsPhase({ game, player }: Props) {
     )
   }
 
-  // Before host starts revealing — show a suspense waiting screen
-  if (revealIndex < 0) {
+  // Show waiting screen until host has finished revealing ALL answers
+  const allRevealed = results.length > 0 && revealIndex >= results.length - 1
+  if (!allRevealed) {
     return (
       <div className="flex w-full flex-col items-center gap-6 text-center py-8">
         <p className="text-5xl">{isFinal ? '🦑' : '🎭'}</p>
@@ -94,7 +95,7 @@ export default function ResultsPhase({ game, player }: Props) {
         </div>
         <div className="flex items-center gap-2 mt-4">
           <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
-          <p className="text-sm text-white/40">The host is about to reveal the answers</p>
+          <p className="text-sm text-white/40">The host is revealing the answers — watch the screen!</p>
         </div>
       </div>
     )

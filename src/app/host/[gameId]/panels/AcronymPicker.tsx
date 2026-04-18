@@ -92,13 +92,12 @@ export default function AcronymPicker({
     setConfirming(true)
     setError('')
 
-    const nextRound = targetRound
     const { error: updateErr } = await supabase
       .from('games')
       .update({
         status: 'kracronym_intro',
         is_final_round: true,
-        current_round: nextRound,
+        current_round: targetRound,
         reveal_index: -1,
         podium_step: 0,
       })
