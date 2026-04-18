@@ -559,38 +559,7 @@ export default function ResultsView({ game }: Props) {
               </p>
             </div>
 
-            {/* Letter tiles — smaller, below */}
-            {letters.length > 0 && (
-              <div
-                className="flex items-center justify-center gap-2 flex-wrap mt-2"
-                style={{ animation: 'slideUp 0.5s ease 0.9s both' }}
-              >
-                {letters.map((letter, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 'clamp(32px, 4vw, 52px)',
-                      height: 'clamp(32px, 4vw, 52px)',
-                      background: 'linear-gradient(145deg, #f5e6c8 0%, #e8d5a0 50%, #d4b96a 100%)',
-                      border: '2px solid #8b6914',
-                      borderRadius: '4px',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.5)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >
-                    <span style={{
-                      fontSize: 'clamp(1rem, 2.5vw, 2rem)',
-                      fontWeight: 900,
-                      color: '#1a0a00',
-                      fontFamily: 'Georgia, serif',
-                      lineHeight: 1,
-                    }}>
-                      {letter}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+
           </div>
 
           <style>{`

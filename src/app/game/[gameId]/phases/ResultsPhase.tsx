@@ -20,6 +20,13 @@ export default function ResultsPhase({ game, player }: Props) {
 
   const isTeamMember = player.role === 'team_member'
   const isCrowdVoter = player.role === 'crowd_voter'
+  const isFinal = game.is_final_round
+  const revealIndex = game.reveal_index ?? -1
+
+  // During final round podium sequence, show a waiting screen on phones
+  // until the host is done with the full reveal
+  const podiumStep = game.podium_step ?? 0
+  const showingPodium = isFinal && podiumStep > 0
 
   useEffect(() => {
     async function load() {
@@ -72,6 +79,61 @@ export default function ResultsPhase({ game, player }: Props) {
     )
   }
 
+  // Before host starts revealing — show a suspense waiting screen
+  if (revealIndex < 0) {
+    return (
+      <div className="flex w-full flex-col items-center gap-6 text-center py-8">
+        <p className="text-5xl">{isFinal ? '🦑' : '🎭'}</p>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400 mb-2">
+            Round {game.current_round} · Results
+          </p>
+          <p className="text-2xl font-black text-white">
+            {isFinal ? 'The Final Results...' : 'Get Ready...'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 mt-4">
+          <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+          <p className="text-sm text-white/40">The host is about to reveal the answers</p>
+        </div>
+      </div>
+    )
+  }
+
+  // During final round podium steps — show suspense screen on phones
+  if (showingPodium) {
+    const stepMessages = [
+      'The verdict is in...',
+      'Revealing the results...',
+      '3rd place revealed — watch the screen!',
+      '2nd place revealed — watch the screen!',
+      '🏆 The champion has been crowned!',
+    ]
+    return (
+      <div className="flex w-full flex-col items-center gap-6 text-center py-8">
+        <div style={{ animation: 'krakenPulse 2s ease-in-out infinite' }}>
+          <p style={{ fontSize: '4rem', lineHeight: 1 }}>🏆</p>
+        </div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400 mb-2">
+            KRACRONYM · Final Results
+          </p>
+          <p className="text-2xl font-black text-white">
+            {stepMessages[Math.min(podiumStep, stepMessages.length - 1)]}
+          </p>
+        </div>
+        <p className="text-sm text-white/40">Watch the display screen!</p>
+        <style>{`
+          @keyframes krakenPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  // Normal results view — answers revealed
   return (
     <div className="flex w-full flex-col gap-8">
       <div className="text-center">
@@ -92,8 +154,13 @@ export default function ResultsPhase({ game, player }: Props) {
           <p className="text-sm text-white/50">
             {isTeamMember ? 'Your team earned' : 'You earned'}
           </p>
-          <p className="text-5xl font-black text-yellow-400">{pointsEarned}</p>
-          <p className="text-sm text-white/50">{pointsEarned === 1 ? 'point' : 'points'} this round</p>
+          <p className="text-5xl font-black text-yellow-400">
+            {isFinal ? pointsEarned * 2 : pointsEarned}
+          </p>
+          <p className="text-sm text-white/50">
+            {(isFinal ? pointsEarned * 2 : pointsEarned) === 1 ? 'point' : 'points'} this round
+            {isFinal && pointsEarned > 0 ? ' (double points!)' : ''}
+          </p>
         </div>
       )}
 
