@@ -52,8 +52,8 @@ export default function ActiveView({ game, answerCount }: Props) {
             <div
               key={i}
               style={{
-                width: 'clamp(64px, 9vw, 120px)',
-                height: 'clamp(64px, 9vw, 120px)',
+                width: 'clamp(90px, 12vw, 160px)',
+                height: 'clamp(90px, 12vw, 160px)',
                 background: 'linear-gradient(145deg, #f5e6c8 0%, #e8d5a0 50%, #d4b96a 100%)',
                 border: '3px solid #8b6914',
                 borderRadius: '6px',
@@ -66,7 +66,7 @@ export default function ActiveView({ game, answerCount }: Props) {
             >
               <span
                 style={{
-                  fontSize: 'clamp(2rem, 5.5vw, 5rem)',
+                  fontSize: 'clamp(3rem, 7.5vw, 7rem)',
                   fontWeight: 900,
                   color: '#1a0a00',
                   fontFamily: 'Georgia, serif',
