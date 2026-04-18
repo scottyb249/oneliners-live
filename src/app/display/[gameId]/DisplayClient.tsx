@@ -10,6 +10,7 @@ import VotingView from './views/VotingView'
 import ResultsView from './views/ResultsView'
 import EndedView from './views/EndedView'
 import BreakView from './views/BreakView'
+import KracronymIntroView from './views/KracronymIntroView'
 
 interface Props {
   gameId: string
@@ -74,7 +75,6 @@ export default function DisplayClient({ gameId }: Props) {
         (payload) => {
           const updated = payload.new as Game
 
-          // Only close display when host explicitly sets display_close flag
           if (updated.display_close === true) {
             setClosed(true)
             return
@@ -133,7 +133,6 @@ export default function DisplayClient({ gameId }: Props) {
     )
   }
 
-  // Display paused by host — show holding screen
   if (game.display_active === false) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 gap-6 text-center px-8">
@@ -179,6 +178,7 @@ export default function DisplayClient({ gameId }: Props) {
           <>
             {game.status === 'waiting' && <WaitingView game={game} />}
             {game.status === 'break' && <BreakView game={game} />}
+            {game.status === 'kracronym_intro' && <KracronymIntroView game={game} />}
             {game.status === 'active' && <ActiveView game={game} answerCount={answerCount} />}
             {game.status === 'voting' && <VotingView game={game} />}
             {game.status === 'results' && <ResultsView game={game} />}

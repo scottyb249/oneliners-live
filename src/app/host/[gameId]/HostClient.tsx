@@ -11,6 +11,7 @@ import AnswerManagementPanel from './panels/AnswerManagementPanel'
 import VotingPanel from './panels/VotingPanel'
 import ResultsPanel from './panels/ResultsPanel'
 import BreakPanel from './panels/BreakPanel'
+import KracronymIntroPanel from './panels/KracronymIntroPanel'
 
 const ROUND_PATTERN = [3, 4, 4, 5, 5]
 
@@ -49,7 +50,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       ])
 
       if (gameError) {
-        console.error('Failed to load game:', gameError)
         setLoadError(`Could not load game: ${gameError.message}`)
       } else if (gameData) {
         setGame(gameData as Game)
@@ -106,6 +106,24 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setPickerIsFinalRound(isFinalRound)
     setPickerCameFromResults(fromResults)
     setShowAcronymPicker(true)
+  }
+
+  async function handleFinalRound() {
+    // Set status to kracronym_intro — display shows the cinematic, host sees intro panel
+    const nextRound = (game?.current_round ?? 0) + 1
+    await supabase
+      .from('games')
+      .update({
+        status: 'kracronym_intro',
+        is_final_round: true,
+        reveal_index: -1,
+        podium_step: 0,
+      })
+      .eq('id', gameId)
+    setPickerTargetRound(nextRound)
+    setPickerIsFinalRound(true)
+    setPickerCameFromResults(true)
+    setShowAcronymPicker(false)
   }
 
   async function handleTakeBreak() {
@@ -235,7 +253,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       <TopBar game={game} />
 
       <div className="flex justify-end gap-2 px-4 pt-3">
-        {/* Leaderboard toggle */}
         <button
           onClick={handleToggleLeaderboard}
           className={`rounded-lg border px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all ${
@@ -247,7 +264,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
           {game.show_leaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
         </button>
 
-        {/* Display controls */}
         {game.display_close ? (
           <button
             onClick={async () => {
@@ -302,6 +318,13 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                 onResume={() => openAcronymPicker(game.current_round + 1, game.is_final_round)}
               />
             )}
+            {game.status === 'kracronym_intro' && (
+              <KracronymIntroPanel
+                game={game}
+                onPickAcronym={() => openAcronymPicker(game.current_round + 1, true, true)}
+                onToggleLeaderboard={handleToggleLeaderboard}
+              />
+            )}
             {game.status === 'active' && (
               <AnswerManagementPanel game={game} />
             )}
@@ -313,7 +336,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                 game={game}
                 onNextRound={() => openAcronymPicker(game.current_round + 1, false, true)}
                 onTakeBreak={handleTakeBreak}
-                onFinalRound={() => openAcronymPicker(game.current_round + 1, true, true)}
+                onFinalRound={handleFinalRound}
               />
             )}
           </>

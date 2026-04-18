@@ -1,4 +1,4 @@
-export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break'
+export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break' | 'kracronym_intro'
 export type PlayerRole = 'individual' | 'team_leader' | 'team_member' | 'crowd_voter'
 
 export interface Game {

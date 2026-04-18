@@ -24,6 +24,52 @@ function isStaleGame(game: Game): boolean {
   return Date.now() - created > STALE_HOURS * 60 * 60 * 1000
 }
 
+// ── Kracronym intro hype screen shown on player phones ───────────────────
+function KracronymIntroPhase() {
+  return (
+    <div className="flex w-full flex-col items-center gap-8 text-center py-8">
+      {/* Kraken emoji as stand-in for the artwork on phones */}
+      <div style={{ animation: 'krakenPulse 2s ease-in-out infinite' }}>
+        <p style={{ fontSize: '5rem', lineHeight: 1 }}>🦑</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-yellow-400 mb-3">
+          The Final Round
+        </p>
+        <p
+          className="font-black text-white leading-tight"
+          style={{ fontSize: 'clamp(2rem, 8vw, 3rem)' }}
+        >
+          THE KRACRONYM RISES
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 px-6 py-5 w-full max-w-xs">
+        <p className="text-sm font-bold text-yellow-400 mb-2">Final Round Rules</p>
+        <div className="space-y-1.5 text-sm text-white/60 text-left">
+          <p>⚡ 6-letter acronym</p>
+          <p>🕐 Extra time to write</p>
+          <p>✌️ Double points on votes</p>
+          <p>🏆 This is it — go for glory</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+        <p className="text-sm text-white/40">Waiting for host to reveal the acronym...</p>
+      </div>
+
+      <style>{`
+        @keyframes krakenPulse {
+          0%, 100% { transform: scale(1) rotate(-3deg); }
+          50% { transform: scale(1.1) rotate(3deg); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export default function GameClient({ gameId, playerId }: Props) {
   const router = useRouter()
   const [game, setGame] = useState<Game | null>(null)
@@ -84,7 +130,6 @@ export default function GameClient({ gameId, playerId }: Props) {
     else setLoading(false)
   }, [gameId, playerId])
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`game-${gameId}`)
@@ -106,7 +151,6 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
-  // Auto-reconnect when screen wakes from sleep/lock
   useEffect(() => {
     function handleVisibilityChange() {
       if (document.visibilityState === 'visible') {
@@ -117,7 +161,6 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [gameId])
 
-  // Fetch leaderboard whenever show_leaderboard toggles on
   useEffect(() => {
     if (!game?.show_leaderboard) return
     async function fetchLeaderboard() {
@@ -132,7 +175,6 @@ export default function GameClient({ gameId, playerId }: Props) {
     fetchLeaderboard()
   }, [game?.show_leaderboard, gameId])
 
-  // Abandonment check
   useEffect(() => {
     const interval = setInterval(() => {
       if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'break') return
@@ -186,7 +228,6 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   return (
     <main className="min-h-screen bg-zinc-950">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
         <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
           O.N.E. Liners Live
@@ -199,7 +240,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         </button>
       </div>
 
-      {/* Abandonment banner */}
       {showAbandonedBanner && (
         <div className="mx-auto max-w-2xl px-6 pt-4">
           <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-4 py-3 text-center">
@@ -214,7 +254,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         </div>
       )}
 
-      {/* Phase content */}
       <div className="mx-auto w-full max-w-2xl px-6 py-8">
         {game.show_leaderboard ? (
           <div className="flex w-full flex-col gap-4">
@@ -267,6 +306,7 @@ export default function GameClient({ gameId, playerId }: Props) {
                 </div>
               </div>
             )}
+            {game.status === 'kracronym_intro' && <KracronymIntroPhase />}
             {game.status === 'active' && <ActivePhase game={game} player={player} />}
             {game.status === 'voting' && <VotingPhase game={game} player={player} />}
             {game.status === 'results' && <ResultsPhase game={game} player={player} />}
@@ -275,7 +315,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         )}
       </div>
 
-      {/* Leave confirmation modal */}
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">
