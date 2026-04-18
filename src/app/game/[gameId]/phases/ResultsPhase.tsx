@@ -15,6 +15,7 @@ interface AnswerWithVotes extends Answer {
 
 export default function ResultsPhase({ game, player }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
+  const [leaderboard, setLeaderboard] = useState<Player[]>([])
   const [pointsEarned, setPointsEarned] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -30,7 +31,7 @@ export default function ResultsPhase({ game, player }: Props) {
 
   useEffect(() => {
     async function load() {
-      const [{ data: answers }, { data: votes }] = await Promise.all([
+      const [{ data: answers }, { data: votes }, { data: players }] = await Promise.all([
         supabase
           .from('answers')
           .select('*, players(name, team_name)')
@@ -43,9 +44,17 @@ export default function ResultsPhase({ game, player }: Props) {
           .select('answer_id')
           .eq('game_id', game.id)
           .eq('round', game.current_round),
+        supabase
+          .from('players')
+          .select('*')
+          .eq('game_id', game.id)
+          .in('role', ['individual', 'team_leader'])
+          .order('score', { ascending: false }),
       ])
 
       if (!answers || !votes) { setLoading(false); return }
+
+      if (players) setLeaderboard(players as Player[])
 
       const tally: Record<string, number> = {}
       for (const vote of votes) {
@@ -101,33 +110,64 @@ export default function ResultsPhase({ game, player }: Props) {
     )
   }
 
-  // During final round podium steps — show suspense screen on phones
+  // During final round podium steps — show who was just revealed
   if (showingPodium) {
-    const stepMessages = [
-      'The verdict is in...',
-      'Revealing the results...',
-      '3rd place revealed — watch the screen!',
-      '2nd place revealed — watch the screen!',
-      '🏆 The champion has been crowned!',
+    const placeIndex = podiumStep - 2 // 0=3rd, 1=2nd, 2=1st
+    const leaderIndex = 2 - placeIndex // maps to leaderboard position
+    const placeLabels = ['🥉 3rd Place', '🥈 2nd Place', '🏆 Champion!']
+    const placeColors = ['text-amber-500', 'text-zinc-300', 'text-yellow-400']
+    const borderColors = [
+      'border-amber-500/40 bg-amber-500/10',
+      'border-zinc-400/40 bg-zinc-400/10',
+      'border-yellow-400/40 bg-yellow-400/10',
     ]
+
+    // Step 1 = rest of pack, steps 2-4 = individual reveals
+    if (podiumStep === 1) {
+      return (
+        <div className="flex w-full flex-col items-center gap-6 text-center py-8">
+          <p style={{ fontSize: '3rem', lineHeight: 1 }}>📋</p>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400 mb-2">
+              KRACRONYM · Final Results
+            </p>
+            <p className="text-2xl font-black text-white">Final standings revealed</p>
+          </div>
+          <p className="text-sm text-white/40">Watch the display screen!</p>
+        </div>
+      )
+    }
+
+    const idx = Math.min(placeIndex, 2)
+    const revealedPlayer = results.length > 0 ? leaderboard.find((_, i) => i === leaderIndex) : null
+
     return (
       <div className="flex w-full flex-col items-center gap-6 text-center py-8">
-        <div style={{ animation: 'krakenPulse 2s ease-in-out infinite' }}>
-          <p style={{ fontSize: '4rem', lineHeight: 1 }}>🏆</p>
-        </div>
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400 mb-2">
-            KRACRONYM · Final Results
-          </p>
-          <p className="text-2xl font-black text-white">
-            {stepMessages[Math.min(podiumStep, stepMessages.length - 1)]}
-          </p>
-        </div>
-        <p className="text-sm text-white/40">Watch the display screen!</p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
+          KRACRONYM · Final Results
+        </p>
+        {revealedPlayer ? (
+          <div
+            className={`w-full rounded-2xl border-2 px-6 py-8 flex flex-col items-center gap-3 ${borderColors[idx]}`}
+            style={{ animation: 'popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both' }}
+          >
+            <p className={`text-2xl font-black uppercase tracking-widest ${placeColors[idx]}`}>
+              {placeLabels[idx]}
+            </p>
+            <p className="text-4xl font-black text-white leading-tight">
+              {revealedPlayer.team_name ?? revealedPlayer.name}
+            </p>
+            <p className={`text-2xl font-black tabular-nums ${placeColors[idx]}`}>
+              {revealedPlayer.score} pts
+            </p>
+          </div>
+        ) : (
+          <p className="text-2xl font-black text-white">{placeLabels[idx]}</p>
+        )}
         <style>{`
-          @keyframes krakenPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+          @keyframes popIn {
+            from { opacity: 0; transform: scale(0.7); }
+            to { opacity: 1; transform: scale(1); }
           }
         `}</style>
       </div>
