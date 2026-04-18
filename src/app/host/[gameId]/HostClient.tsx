@@ -321,7 +321,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             {game.status === 'kracronym_intro' && (
               <KracronymIntroPanel
                 game={game}
-                onPickAcronym={() => openAcronymPicker(game.current_round + 1, true, true)}
+                onPickAcronym={() => openAcronymPicker(game.current_round, true, true)}
                 onToggleLeaderboard={handleToggleLeaderboard}
               />
             )}

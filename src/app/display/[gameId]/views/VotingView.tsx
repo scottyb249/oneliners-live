@@ -12,7 +12,7 @@ interface Props {
 
 export default function VotingView({ game }: Props) {
   const [answers, setAnswers] = useState<Answer[]>([])
-  const [voteCounts, setVoteCounts] = useState<Record<string, number>>({})
+  const [totalVotes, setTotalVotes] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,12 +34,7 @@ export default function VotingView({ game }: Props) {
       ])
 
       if (ans) setAnswers(ans as unknown as Answer[])
-
-      const counts: Record<string, number> = {}
-      for (const v of votes ?? []) {
-        counts[v.answer_id] = (counts[v.answer_id] ?? 0) + 1
-      }
-      setVoteCounts(counts)
+      setTotalVotes((votes ?? []).length)
       setLoading(false)
     }
     load()
@@ -52,10 +47,7 @@ export default function VotingView({ game }: Props) {
         (payload) => {
           const v = payload.new as { answer_id: string; round: number }
           if (v.round === game.current_round) {
-            setVoteCounts((prev) => ({
-              ...prev,
-              [v.answer_id]: (prev[v.answer_id] ?? 0) + 1,
-            }))
+            setTotalVotes((prev) => prev + 1)
           }
         },
       )
@@ -63,12 +55,6 @@ export default function VotingView({ game }: Props) {
 
     return () => { supabase.removeChannel(channel) }
   }, [game.id, game.current_round])
-
-  const sorted = [...answers].sort(
-    (a, b) => (voteCounts[b.id] ?? 0) - (voteCounts[a.id] ?? 0),
-  )
-  const maxVotes = Math.max(...Object.values(voteCounts), 1)
-  const totalVotes = Object.values(voteCounts).reduce((s, n) => s + n, 0)
 
   return (
     <div className="relative flex flex-1 flex-col gap-3 px-10 py-5">
@@ -78,7 +64,7 @@ export default function VotingView({ game }: Props) {
           className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
           style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
         >
-          Round {game.current_round} · Vote
+          Round {game.current_round}{game.is_final_round ? ' · KRACRONYM' : ''} · Vote
         </p>
         <p
           className="font-black text-white leading-tight"
@@ -88,26 +74,25 @@ export default function VotingView({ game }: Props) {
         </p>
       </div>
 
-      {/* Answer cards */}
+      {/* Answer cards — no live vote counts shown */}
       {loading ? (
         <p className="animate-pulse text-center text-white/30">Loading answers...</p>
       ) : (
-        <div className="flex flex-1 flex-col justify-center gap-2">
-          {sorted.map((answer) => {
-            const count = voteCounts[answer.id] ?? 0
-            const pct = (count / maxVotes) * 100
+        <div className="flex flex-1 flex-col justify-center gap-3">
+          {answers.map((answer, i) => {
             const isFastest = (answer as any).is_fastest
-
             return (
               <div
                 key={answer.id}
-                className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-5 py-3"
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-4"
               >
-                <div
-                  className="absolute inset-y-0 left-0 rounded-xl bg-blue-500/10 transition-all duration-700"
-                  style={{ width: `${pct}%` }}
-                />
-                <div className="relative flex items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <span
+                    className="font-black text-white/20 shrink-0 tabular-nums"
+                    style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
+                  >
+                    {i + 1}
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p
                       className="font-semibold text-white leading-snug"
@@ -124,12 +109,6 @@ export default function VotingView({ game }: Props) {
                       </p>
                     )}
                   </div>
-                  <p
-                    className="shrink-0 font-black text-white tabular-nums"
-                    style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)' }}
-                  >
-                    {count}
-                  </p>
                 </div>
               </div>
             )
@@ -137,7 +116,7 @@ export default function VotingView({ game }: Props) {
         </div>
       )}
 
-      {/* Timer + votes cast — pinned bottom-right corner */}
+      {/* Timer + votes cast — pinned bottom-right */}
       <div className="absolute bottom-4 right-10 flex items-center gap-3">
         <p
           className="font-bold text-white/70"
@@ -156,5 +135,3 @@ export default function VotingView({ game }: Props) {
     </div>
   )
 }
-
-
