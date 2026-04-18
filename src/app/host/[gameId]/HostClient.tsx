@@ -116,6 +116,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       .update({
         status: 'kracronym_intro',
         is_final_round: true,
+        current_acronym: null,
         reveal_index: -1,
         podium_step: 0,
       })
