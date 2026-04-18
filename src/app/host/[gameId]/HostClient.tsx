@@ -109,7 +109,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }
 
   async function handleFinalRound() {
-    // Set status to kracronym_intro — display shows the cinematic, host sees intro panel
     const nextRound = (game?.current_round ?? 0) + 1
     await supabase
       .from('games')
@@ -117,6 +116,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         status: 'kracronym_intro',
         is_final_round: true,
         current_acronym: null,
+        current_round: nextRound,
         reveal_index: -1,
         podium_step: 0,
       })
