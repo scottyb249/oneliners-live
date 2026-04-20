@@ -100,6 +100,7 @@ export default function AcronymPicker({
         current_round: targetRound,
         reveal_index: -1,
         podium_step: 0,
+        show_leaderboard: false,
       })
       .eq('id', game.id)
 
@@ -134,6 +135,7 @@ export default function AcronymPicker({
           reveal_index: -1,
           podium_step: 0,
           round_duration: duration,
+          show_leaderboard: false,
         })
         .eq('id', game.id)
 
@@ -160,6 +162,7 @@ export default function AcronymPicker({
         reveal_index: -1,
         podium_step: 0,
         round_duration: duration,
+        show_leaderboard: false,
       })
       .eq('id', game.id)
 

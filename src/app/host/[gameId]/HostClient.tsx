@@ -265,10 +265,10 @@ export default function HostClient({ gameId: rawGameId }: Props) {
           {game.show_leaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
         </button>
 
-        {game.display_close ? (
+        {(game.display_close || game.display_active == null) ? (
           <button
             onClick={async () => {
-              await supabase.from('games').update({ display_close: false }).eq('id', game.id)
+              await supabase.from('games').update({ display_close: false, display_active: true }).eq('id', game.id)
               window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')
             }}
             className="rounded-lg border border-blue-400/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-400 hover:border-blue-400 transition-all"

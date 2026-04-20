@@ -18,6 +18,7 @@ export default function ActivePhase({ game, player }: Props) {
   const [editing, setEditing] = useState(false)
   const [approved, setApproved] = useState(false)
   const [justApproved, setJustApproved] = useState(false)
+  const [hostMessage, setHostMessage] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -55,12 +56,14 @@ export default function ActivePhase({ game, player }: Props) {
         setApproved(data.approved ?? false)
         setSubmitted(true)
         setEditing(false)
+        setHostMessage((data as any).host_message ?? null)
       } else {
         setAnswerId(null)
         setSubmittedContent('')
         setAnswer('')
         setApproved(false)
         setJustApproved(false)
+        setHostMessage(null)
         setSubmitted(false)
         setEditing(false)
         setLocked(false)
@@ -85,11 +88,15 @@ export default function ActivePhase({ game, player }: Props) {
           filter: `id=eq.${answerId}`,
         },
         (payload) => {
-          const updated = payload.new as { approved: boolean; content: string }
+          const updated = payload.new as { approved: boolean; content: string; host_message?: string }
           // If host edited the content, reflect that too
           if (updated.content && updated.content !== submittedContent) {
             setSubmittedContent(updated.content)
             setAnswer(updated.content)
+          }
+          // Host message
+          if (updated.host_message !== undefined) {
+            setHostMessage(updated.host_message ?? null)
           }
           if (updated.approved && !approved) {
             setApproved(true)
@@ -342,6 +349,16 @@ export default function ActivePhase({ game, player }: Props) {
             </p>
             <p className="text-white font-semibold leading-snug">{submittedContent}</p>
           </div>
+
+          {/* Host message notification */}
+          {hostMessage && (
+            <div className="rounded-xl border border-blue-400/40 bg-blue-400/10 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-1">
+                📝 Note from the Host
+              </p>
+              <p className="text-sm text-white leading-snug">{hostMessage}</p>
+            </div>
+          )}
 
           {/* Approval notification — flashes green then settles */}
           {approved && (

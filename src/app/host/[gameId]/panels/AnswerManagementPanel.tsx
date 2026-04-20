@@ -16,6 +16,9 @@ export default function AnswerManagementPanel({ game }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [messagingId, setMessagingId] = useState<string | null>(null)
+  const [messageContent, setMessageContent] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
 
   // Load existing answers + subscribe to new ones
   useEffect(() => {
@@ -93,6 +96,30 @@ export default function AnswerManagementPanel({ game }: Props) {
   function cancelEdit() {
     setEditingId(null)
     setEditingContent('')
+  }
+
+  function startMessage(answer: Answer) {
+    setMessagingId(answer.id)
+    setMessageContent('')
+    setEditingId(null)
+  }
+
+  function cancelMessage() {
+    setMessagingId(null)
+    setMessageContent('')
+  }
+
+  async function sendMessage(answer: Answer) {
+    const trimmed = messageContent.trim()
+    if (!trimmed) return
+    setSendingMessage(true)
+    await supabase.from('answers').update({ host_message: trimmed }).eq('id', answer.id)
+    setAnswers((prev) =>
+      prev.map((a) => (a.id === answer.id ? { ...a, host_message: trimmed } : a))
+    )
+    setSendingMessage(false)
+    setMessagingId(null)
+    setMessageContent('')
   }
 
   async function saveEdit(answer: Answer) {
@@ -180,6 +207,7 @@ export default function AnswerManagementPanel({ game }: Props) {
             const isFastest = answer.is_fastest
             const disableApprove = !isApproved && atLimit
             const isEditing = editingId === answer.id
+            const isMessaging = messagingId === answer.id
 
             return (
               <div
@@ -188,7 +216,7 @@ export default function AnswerManagementPanel({ game }: Props) {
                   isApproved
                     ? 'border-green-500/40 bg-green-500/10'
                     : 'border-white/10 bg-white/5'
-                } ${disableApprove && !isEditing ? 'opacity-40' : ''}`}
+                } ${disableApprove && !isEditing && !isMessaging ? 'opacity-40' : ''}`}
               >
                 {isEditing ? (
                   /* Edit mode */
@@ -218,6 +246,37 @@ export default function AnswerManagementPanel({ game }: Props) {
                       </button>
                     </div>
                   </div>
+                ) : isMessaging ? (
+                  /* Message mode */
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Note from the Host</p>
+                    <p className="text-xs text-white/40 italic">"{answer.content}"</p>
+                    <textarea
+                      value={messageContent}
+                      onChange={(e) => setMessageContent(e.target.value)}
+                      maxLength={150}
+                      rows={2}
+                      autoFocus
+                      placeholder="e.g. Please keep it clean 😅"
+                      className="w-full resize-none rounded-lg border border-blue-400/40 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400/30"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={cancelMessage}
+                        disabled={sendingMessage}
+                        className="flex-1 rounded-lg border border-white/20 py-1.5 text-xs font-bold text-white/50 hover:text-white transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => sendMessage(answer)}
+                        disabled={sendingMessage || !messageContent.trim()}
+                        className="flex-1 rounded-lg bg-blue-500 py-1.5 text-xs font-bold text-white hover:bg-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sendingMessage ? 'Sending...' : 'Send Note'}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   /* Normal display mode */
                   <div className="flex items-start gap-3">
@@ -229,8 +288,18 @@ export default function AnswerManagementPanel({ game }: Props) {
                       {isFastest && (
                         <p className="text-xs text-yellow-400 font-semibold mt-0.5">⚡ Fastest Answer +1</p>
                       )}
+                      {(answer as any).host_message && (
+                        <p className="text-xs text-blue-400 mt-0.5">✉️ "{(answer as any).host_message}"</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => startMessage(answer)}
+                        className="rounded-lg px-2 py-1.5 text-xs font-bold text-white/30 hover:bg-white/10 hover:text-blue-400 transition-all"
+                        title="Send note to player"
+                      >
+                        ✉️
+                      </button>
                       {/* Edit button — only show before voting launches */}
                       <button
                         onClick={() => startEdit(answer)}

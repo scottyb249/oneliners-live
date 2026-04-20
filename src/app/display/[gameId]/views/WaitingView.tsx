@@ -121,6 +121,16 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
           {playerCount} {playerCount === 1 ? 'player' : 'players'} joined
         </p>
       </div>
+
+      {/* Host name */}
+      {game.host_name && (
+        <p
+          className="text-white/30 font-medium"
+          style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1rem)' }}
+        >
+          Hosted by {game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}
+        </p>
+      )}
     </div>
   )
 }

@@ -42,6 +42,14 @@ export default function BreakView({ game }: Props) {
           <br />
           Grab a drink and don&apos;t go anywhere!
         </p>
+        {game.host_name && (
+          <p
+            className="text-white/30 font-medium"
+            style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1rem)' }}
+          >
+            Hosted by {game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}
+          </p>
+        )}
       </div>
 
       {/* Round info */}
