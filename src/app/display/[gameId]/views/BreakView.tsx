@@ -44,10 +44,10 @@ export default function BreakView({ game }: Props) {
         </p>
         {game.host_name && (
           <p
-            className="text-white/30 font-medium"
-            style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1rem)' }}
+            className="text-white/70 font-semibold"
+            style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
           >
-            Hosted by {game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}
+            Hosted by <span className="text-yellow-400">{game.host_name.charAt(0).toUpperCase() + game.host_name.slice(1)}</span>
           </p>
         )}
       </div>
