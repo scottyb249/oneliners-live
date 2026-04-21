@@ -44,12 +44,10 @@ export default function AcronymPicker({
 
   // Signal to display that host is picking — show "Get Ready" screen
   useEffect(() => {
-    console.log('AcronymPicker mounted, setting picking for game:', game.id)
     supabase
       .from('games')
       .update({ status: 'picking' })
       .eq('id', game.id)
-      .then(({ error }) => console.log('picking update result:', error))
   }, [game.id])
 
   function generateRandomAcronym(count: number): string {

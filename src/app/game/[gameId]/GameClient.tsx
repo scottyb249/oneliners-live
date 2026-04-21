@@ -28,7 +28,6 @@ function isStaleGame(game: Game): boolean {
 function KracronymIntroPhase() {
   return (
     <div className="flex w-full flex-col items-center gap-8 text-center py-8">
-      {/* Kraken emoji as stand-in for the artwork on phones */}
       <div style={{ animation: 'krakenPulse 2s ease-in-out infinite' }}>
         <p style={{ fontSize: '5rem', lineHeight: 1 }}>🦑</p>
       </div>
@@ -177,7 +176,7 @@ export default function GameClient({ gameId, playerId }: Props) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'break') return
+      if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'break' || game.status === 'picking') return
       if (Date.now() - lastActivityRef.current >= ABANDONMENT_MS) {
         setShowAbandonedBanner(true)
       }
@@ -292,17 +291,22 @@ export default function GameClient({ gameId, playerId }: Props) {
             {game.status === 'waiting' && (
               <WaitingPhase game={game} player={player} playerCount={playerCount} />
             )}
-            {game.status === 'break' && (
+            {(game.status === 'break' || game.status === 'picking') && (
               <div className="flex flex-col items-center gap-6 text-center py-12">
-                <p className="text-5xl">☕</p>
-                <p className="text-2xl font-black text-white">We&apos;ll Be Right Back!</p>
+                <p className="text-5xl">{game.status === 'picking' ? '🎯' : '☕'}</p>
+                <p className="text-2xl font-black text-white">
+                  {game.status === 'picking' ? 'Get Ready!' : 'We\'ll Be Right Back!'}
+                </p>
                 <p className="text-white/50 font-medium">
-                  O.N.E. Liners Live is on a short break.<br />
-                  Hang tight — the game will resume shortly.
+                  {game.status === 'picking'
+                    ? 'The host is picking the next acronym.\nGet ready to write!'
+                    : 'O.N.E. Liners Live is on a short break.\nHang tight — the game will resume shortly.'}
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
-                  <p className="text-sm text-white/30">Waiting for host to resume...</p>
+                  <p className="text-sm text-white/30">
+                    {game.status === 'picking' ? 'Next round coming up...' : 'Waiting for host to resume...'}
+                  </p>
                 </div>
               </div>
             )}
