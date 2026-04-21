@@ -77,6 +77,7 @@ export default function DisplayClient({ gameId }: Props) {
           const updated = payload.new as Game
 
           if (updated.display_close === true) {
+            window.close()
             setClosed(true)
             return
           }
