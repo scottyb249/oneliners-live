@@ -1,3 +1,11 @@
+// NOTE: The `status` column on the `games` table in Supabase is plain text with NO check constraint.
+// A check constraint (games_status_check) was dropped early in the project to allow new statuses freely.
+// If a new status value is silently rejected by Supabase, run:
+//   SELECT conname FROM pg_constraint WHERE conrelid = 'games'::regclass;
+// If games_status_check appears, drop it:
+//   ALTER TABLE games DROP CONSTRAINT IF EXISTS games_status_check;
+// Valid statuses: waiting | picking | active | voting | results | break | kracronym_intro | ended
+
 export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break' | 'kracronym_intro' | 'picking'
 export type PlayerRole = 'individual' | 'team_leader' | 'team_member' | 'crowd_voter'
 
