@@ -42,6 +42,14 @@ export default function AcronymPicker({
   const VOWELS = 'AEIOU'
   const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
+  // Signal to display that host is picking — show "Get Ready" screen
+  useEffect(() => {
+    supabase
+      .from('games')
+      .update({ status: 'picking' })
+      .eq('id', game.id)
+  }, [game.id])
+
   function generateRandomAcronym(count: number): string {
     let letters = ''
     if (count >= 2) {

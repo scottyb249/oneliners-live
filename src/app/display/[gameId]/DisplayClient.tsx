@@ -11,6 +11,7 @@ import ResultsView from './views/ResultsView'
 import EndedView from './views/EndedView'
 import BreakView from './views/BreakView'
 import KracronymIntroView from './views/KracronymIntroView'
+import GetReadyView from './views/GetReadyView'
 
 interface Props {
   gameId: string
@@ -176,6 +177,7 @@ export default function DisplayClient({ gameId }: Props) {
           </div>
         ) : (
           <>
+            {game.status === 'picking' && <GetReadyView game={game} />}
             {game.status === 'waiting' && <WaitingView game={game} />}
             {game.status === 'break' && <BreakView game={game} />}
             {game.status === 'kracronym_intro' && <KracronymIntroView game={game} />}

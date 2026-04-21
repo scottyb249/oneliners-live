@@ -1,4 +1,4 @@
-export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break' | 'kracronym_intro'
+export type GameStatus = 'waiting' | 'active' | 'voting' | 'results' | 'ended' | 'break' | 'kracronym_intro' | 'picking'
 export type PlayerRole = 'individual' | 'team_leader' | 'team_member' | 'crowd_voter'
 
 export interface Game {
@@ -45,6 +45,7 @@ export interface Answer {
   approved: boolean
   is_tiebreaker: boolean
   is_fastest: boolean
+  host_message: string | null
   players?: {
     name: string
     team_name: string | null

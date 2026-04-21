@@ -38,6 +38,8 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
   const [pickerCameFromResults, setPickerCameFromResults] = useState(false)
+  // Status to restore if host cancels out of the picker
+  const [prePickerStatus, setPrePickerStatus] = useState<string>('waiting')
 
   useEffect(() => {
     setLoading(true)
@@ -92,7 +94,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }, [gameId])
 
   useEffect(() => {
-    if (!game || game.status === 'ended' || game.status === 'waiting') return
+    if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'picking') return
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       e.preventDefault()
       e.returnValue = ''
@@ -102,10 +104,21 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   }, [game])
 
   function openAcronymPicker(targetRound: number, isFinalRound: boolean, fromResults = false) {
+    // Capture the current status before entering the picker so we can restore it on cancel
+    setPrePickerStatus(game?.status ?? 'waiting')
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
     setPickerCameFromResults(fromResults)
     setShowAcronymPicker(true)
+  }
+
+  async function handleCancelPicker() {
+    // Restore the status the display was showing before the host entered the picker
+    await supabase
+      .from('games')
+      .update({ status: prePickerStatus })
+      .eq('id', gameId)
+    setShowAcronymPicker(false)
   }
 
   async function handleFinalRound() {
@@ -298,7 +311,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             targetRound={pickerTargetRound}
             isFinalRound={pickerIsFinalRound}
             letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
-            onCancel={() => setShowAcronymPicker(false)}
+            onCancel={handleCancelPicker}
             onConfirmed={() => setShowAcronymPicker(false)}
             onTakeBreak={handleTakeBreak}
             onToggleLeaderboard={handleToggleLeaderboard}
@@ -340,6 +353,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
                 onFinalRound={handleFinalRound}
               />
             )}
+            {/* picking is a transient display-only status — host panel renders nothing extra */}
           </>
         )}
       </div>
