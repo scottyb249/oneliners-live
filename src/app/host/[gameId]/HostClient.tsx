@@ -198,6 +198,8 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   function handleLogOut() {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('host_password_verified')
+      // Close the display window if it was opened via window.open
+      window.open('', 'oneliners-display')?.close()
     }
     router.push('/host')
   }

@@ -76,7 +76,8 @@ export default function DisplayClient({ gameId }: Props) {
         (payload) => {
           const updated = payload.new as Game
 
-          if (updated.display_close === true) {
+          // Only close if display_close changed from false → true (host explicitly closed it)
+          if (updated.display_close === true && (payload.old as Game).display_close === false) {
             window.close()
             setClosed(true)
             return
