@@ -44,10 +44,12 @@ export default function AcronymPicker({
 
   // Signal to display that host is picking — show "Get Ready" screen
   useEffect(() => {
+    console.log('AcronymPicker mounted, setting picking for game:', game.id)
     supabase
       .from('games')
       .update({ status: 'picking' })
       .eq('id', game.id)
+      .then(({ error }) => console.log('picking update result:', error))
   }, [game.id])
 
   function generateRandomAcronym(count: number): string {
@@ -93,8 +95,6 @@ export default function AcronymPicker({
     load()
   }, [letterCount])
 
-  // "Skip to KRACRONYM" — sets kracronym_intro so the display shows the
-  // cinematic intro. Host then picks the acronym from KracronymIntroPanel.
   async function handleSkipToKracronym() {
     if (confirming) return
     setConfirming(true)
@@ -130,7 +130,6 @@ export default function AcronymPicker({
     const updatedUsed = selected ? [...usedAcronyms, selected.acronym] : usedAcronyms
     const duration = getTimerDuration(acronymToLaunch, isFinalRound)
 
-    // If this is the final round, go through kracronym_intro first
     if (isFinalRound) {
       const { error: updateErr } = await supabase
         .from('games')
@@ -157,7 +156,6 @@ export default function AcronymPicker({
       return
     }
 
-    // Regular round — go straight to active
     const { error: updateErr } = await supabase
       .from('games')
       .update({
