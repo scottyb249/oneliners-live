@@ -38,7 +38,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
   const [pickerIsFinalRound, setPickerIsFinalRound] = useState(false)
   const [pickerCameFromResults, setPickerCameFromResults] = useState(false)
-  // Status to restore if host cancels out of the picker
   const [prePickerStatus, setPrePickerStatus] = useState<string>('waiting')
 
   useEffect(() => {
@@ -103,17 +102,19 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [game])
 
-  function openAcronymPicker(targetRound: number, isFinalRound: boolean, fromResults = false) {
-    // Capture the current status before entering the picker so we can restore it on cancel
+  async function openAcronymPicker(targetRound: number, isFinalRound: boolean, fromResults = false) {
     setPrePickerStatus(game?.status ?? 'waiting')
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
     setPickerCameFromResults(fromResults)
+    await supabase
+      .from('games')
+      .update({ status: 'picking' })
+      .eq('id', gameId)
     setShowAcronymPicker(true)
   }
 
   async function handleCancelPicker() {
-    // Restore the status the display was showing before the host entered the picker
     await supabase
       .from('games')
       .update({ status: prePickerStatus })
@@ -148,14 +149,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   async function handleBackToResults() {
     await supabase.from('games').update({ status: 'results' }).eq('id', gameId)
     setShowAcronymPicker(false)
-  }
-
-  async function handleToggleDisplay() {
-    const currentlyActive = game?.display_active !== false
-    await supabase
-      .from('games')
-      .update({ display_active: !currentlyActive })
-      .eq('id', gameId)
   }
 
   async function handleToggleLeaderboard() {
