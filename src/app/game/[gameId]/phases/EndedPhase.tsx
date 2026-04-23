@@ -47,8 +47,8 @@ export default function EndedPhase({ game, player }: Props) {
   }
 
   const isNonScoring = player.role === 'team_member' || player.role === 'crowd_voter'
-  const myPosition = leaderboard.findIndex((p) => p.id === player.id) + 1
   const myEntry = leaderboard.find((p) => p.id === player.id)
+  const myFinalPos = myEntry?.final_position ?? null
 
   if (loading) {
     return (
@@ -68,11 +68,11 @@ export default function EndedPhase({ game, player }: Props) {
         <p className="mt-1 text-3xl font-black text-white">Final Leaderboard</p>
       </div>
 
-      {!isNonScoring && myPosition > 0 && myEntry && (
+      {!isNonScoring && myFinalPos && myEntry && (
         <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
           <p className="text-sm text-white/50">You finished</p>
           <p className="mt-1 text-5xl font-black text-yellow-400">
-            {myPosition <= 3 ? MEDALS[myPosition - 1] : `#${myPosition}`}
+            {myFinalPos <= 3 ? MEDALS[myFinalPos - 1] : `#${myFinalPos}`}
           </p>
           <p className="mt-1 text-sm text-white/50">
             with {myEntry.score} {myEntry.score === 1 ? 'point' : 'points'}
@@ -102,6 +102,7 @@ export default function EndedPhase({ game, player }: Props) {
           const displayName = entry.role === 'team_leader' && entry.team_name
             ? entry.team_name
             : entry.name
+          const pos = entry.final_position
           return (
             <div
               key={entry.id}
@@ -110,7 +111,7 @@ export default function EndedPhase({ game, player }: Props) {
               }`}
             >
               <span className="w-8 shrink-0 text-center text-xl">
-                {i < 3 ? MEDALS[i] : `#${i + 1}`}
+                {pos != null && pos <= 3 ? MEDALS[pos - 1] : `#${pos ?? i + 1}`}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white truncate">

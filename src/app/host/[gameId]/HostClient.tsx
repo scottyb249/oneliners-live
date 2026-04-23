@@ -167,6 +167,32 @@ export default function HostClient({ gameId: rawGameId }: Props) {
 
   async function handleEndGame() {
     setEnding(true)
+
+    // Fetch all scoring players sorted by score descending
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, score')
+      .eq('game_id', gameId)
+      .eq('is_host', false)
+      .neq('role', 'team_member')
+      .neq('role', 'crowd_voter')
+      .order('score', { ascending: false })
+
+    if (players && players.length > 0) {
+      // Assign positions with tie handling (tied players share the same position)
+      let position = 1
+      const updates = players.map((p, i) => {
+        if (i > 0 && p.score < players[i - 1].score) position = i + 1
+        return { id: p.id, final_position: position }
+      })
+
+      await Promise.all(
+        updates.map(({ id, final_position }) =>
+          supabase.from('players').update({ final_position }).eq('id', id)
+        )
+      )
+    }
+
     await supabase.from('games').update({ status: 'ended' }).eq('id', gameId)
     setShowEndConfirm(false)
     setEnding(false)
