@@ -319,6 +319,15 @@ export default function GameClient({ gameId, playerId }: Props) {
         )}
       </div>
 
+      {/* Persistent game code — always visible so host can rejoin if needed */}
+      {game.status !== 'ended' && (
+        <div className="pb-4 text-center">
+          <p className="text-xs text-white/15 tracking-widest uppercase">
+            Game Code: <span className="font-black text-white/25 tracking-[0.3em]">{game.code}</span>
+          </p>
+        </div>
+      )}
+
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900 p-6 text-center space-y-4">
