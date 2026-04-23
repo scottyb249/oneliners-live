@@ -23,7 +23,9 @@ export default function DisplayClient({ gameId }: Props) {
   const [loading, setLoading] = useState(true)
   const [closed, setClosed] = useState(false)
   const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
+  const [connectionLost, setConnectionLost] = useState(false)
   const prevStatusRef = useRef<string | null>(null)
+  const lastRealtimeRef = useRef<number>(Date.now())
 
   useEffect(() => {
     if (!game?.show_leaderboard) return
@@ -83,6 +85,8 @@ export default function DisplayClient({ gameId }: Props) {
             return
           }
 
+          lastRealtimeRef.current = Date.now()
+          setConnectionLost(false)
           prevStatusRef.current = updated.status
           setGame(updated)
         },
@@ -91,6 +95,8 @@ export default function DisplayClient({ gameId }: Props) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'answers', filter: `game_id=eq.${gameId}` },
         (payload) => {
+          lastRealtimeRef.current = Date.now()
+          setConnectionLost(false)
           const incoming = payload.new as { round: number }
           setGame((prev) => {
             if (prev && incoming.round === prev.current_round) {
@@ -100,10 +106,31 @@ export default function DisplayClient({ gameId }: Props) {
           })
         },
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionLost(true)
+        } else if (status === 'SUBSCRIBED') {
+          setConnectionLost(false)
+          // Re-fetch game state in case we missed updates while disconnected
+          supabase.from('games').select('*').eq('id', gameId).single().then(({ data }) => {
+            if (data) setGame(data as Game)
+          })
+        }
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
+
+  // Heartbeat: warn if no realtime event in 45s during active game
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!game || game.status === 'ended' || game.status === 'waiting') return
+      if (Date.now() - lastRealtimeRef.current > 45_000) {
+        setConnectionLost(true)
+      }
+    }, 15_000)
+    return () => clearInterval(interval)
+  }, [game])
 
   if (closed) {
     return (
@@ -147,6 +174,11 @@ export default function DisplayClient({ gameId }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
+      {connectionLost && (
+        <div className="fixed bottom-16 right-4 z-50 rounded-lg border border-orange-400/30 bg-zinc-900/90 px-3 py-2 text-xs font-semibold text-orange-400 backdrop-blur">
+          ⚠️ Connection lost — reconnecting...
+        </div>
+      )}
       <div className="flex flex-1 flex-col">
         {game.show_leaderboard ? (
           <div className="flex flex-1 flex-col items-center justify-center px-12 gap-8">

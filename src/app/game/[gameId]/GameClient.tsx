@@ -82,6 +82,8 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
 
   const lastActivityRef = useRef<number>(Date.now())
+  const lastRealtimeRef = useRef<number>(Date.now())
+  const [connectionLost, setConnectionLost] = useState(false)
 
   async function refreshGame() {
     const { data } = await supabase.from('games').select('*').eq('id', gameId).single()
@@ -138,17 +140,42 @@ export default function GameClient({ gameId, playerId }: Props) {
         (payload) => {
           setGame(payload.new as Game)
           lastActivityRef.current = Date.now()
+          lastRealtimeRef.current = Date.now()
           setShowAbandonedBanner(false)
+          setConnectionLost(false)
         },
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => setPlayerCount((prev) => prev + 1),
+        () => {
+          lastRealtimeRef.current = Date.now()
+          setConnectionLost(false)
+          setPlayerCount((prev) => prev + 1)
+        },
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionLost(true)
+        } else if (status === 'SUBSCRIBED') {
+          setConnectionLost(false)
+          // Refresh game state in case we missed updates while disconnected
+          refreshGame()
+        }
+      })
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
+
+  // Heartbeat: if no realtime event in 45s during active game, show connection warning
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!game || game.status === 'ended' || game.status === 'waiting') return
+      if (Date.now() - lastRealtimeRef.current > 45_000) {
+        setConnectionLost(true)
+      }
+    }, 15_000)
+    return () => clearInterval(interval)
+  }, [game])
 
   useEffect(() => {
     function handleVisibilityChange() {
@@ -238,6 +265,20 @@ export default function GameClient({ gameId, playerId }: Props) {
           Leave Game
         </button>
       </div>
+
+      {connectionLost && (
+        <div className="mx-auto max-w-2xl px-6 pt-4">
+          <div className="rounded-xl border border-orange-400/30 bg-orange-400/10 px-4 py-3 text-center">
+            <p className="text-sm font-semibold text-orange-400">Connection lost — reconnecting...</p>
+            <button
+              onClick={refreshGame}
+              className="mt-1 text-xs font-bold uppercase tracking-widest text-orange-400 underline underline-offset-2"
+            >
+              Tap to refresh
+            </button>
+          </div>
+        </div>
+      )}
 
       {showAbandonedBanner && (
         <div className="mx-auto max-w-2xl px-6 pt-4">

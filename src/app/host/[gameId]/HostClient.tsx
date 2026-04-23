@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Game } from '@/lib/types'
@@ -33,6 +33,8 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [loadError, setLoadError] = useState('')
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [ending, setEnding] = useState(false)
+  const [connectionLost, setConnectionLost] = useState(false)
+  const lastRealtimeRef = useRef<number>(Date.now())
 
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
@@ -81,21 +83,54 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-        (payload) => setGame(payload.new as Game),
+        (payload) => {
+          lastRealtimeRef.current = Date.now()
+          setConnectionLost(false)
+          setGame(payload.new as Game)
+        },
       )
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => refreshPlayerCount(),
+        () => {
+          lastRealtimeRef.current = Date.now()
+          setConnectionLost(false)
+          refreshPlayerCount()
+        },
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => refreshPlayerCount(),
+        () => {
+          lastRealtimeRef.current = Date.now()
+          refreshPlayerCount()
+        },
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionLost(true)
+        } else if (status === 'SUBSCRIBED') {
+          setConnectionLost(false)
+          // Re-fetch game state in case we missed updates while disconnected
+          supabase.from('games').select('*').eq('id', gameId).single().then(({ data }) => {
+            if (data) setGame(data as Game)
+          })
+          refreshPlayerCount()
+        }
+      })
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
+
+  // Heartbeat: warn if no realtime event in 45s during active game
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!game || game.status === 'ended' || game.status === 'waiting') return
+      if (Date.now() - lastRealtimeRef.current > 45_000) {
+        setConnectionLost(true)
+      }
+    }, 15_000)
+    return () => clearInterval(interval)
+  }, [game])
 
   useEffect(() => {
     if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'picking') return
@@ -293,6 +328,16 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
       <TopBar game={game} />
+
+      {connectionLost && (
+        <div className="px-4 pt-3">
+          <div className="rounded-lg border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-center">
+            <p className="text-xs font-semibold text-orange-400">
+              ⚠️ Connection lost — attempting to reconnect. Game state may be delayed.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 px-4 pt-3">
         <button
