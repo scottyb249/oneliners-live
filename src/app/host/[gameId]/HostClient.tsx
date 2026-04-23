@@ -40,6 +40,11 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [pickerCameFromResults, setPickerCameFromResults] = useState(false)
   const [prePickerStatus, setPrePickerStatus] = useState<string>('waiting')
 
+  // Save gameId to sessionStorage so host can resume if browser is accidentally closed
+  useEffect(() => {
+    if (gameId) sessionStorage.setItem('host_game_id', gameId)
+  }, [gameId])
+
   useEffect(() => {
     setLoading(true)
     setLoadError('')
@@ -194,6 +199,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     }
 
     await supabase.from('games').update({ status: 'ended' }).eq('id', gameId)
+    sessionStorage.removeItem('host_game_id')
     setShowEndConfirm(false)
     setEnding(false)
   }
@@ -224,6 +230,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   function handleLogOut() {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('host_password_verified')
+      sessionStorage.removeItem('host_game_id')
       // Close the display window if it was opened via window.open
       window.open('', 'oneliners-display')?.close()
     }
