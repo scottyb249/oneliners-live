@@ -53,7 +53,7 @@ function LobbySlide({ game, playerCount }: { game: Game; playerCount: number }) 
       <img
         src="/logo.png"
         alt="O.N.E. Liners Live"
-        style={{ height: 'clamp(8rem, 20vw, 16rem)', width: 'auto', objectFit: 'contain' }}
+        style={{ height: 'clamp(16rem, 40vw, 32rem)', width: 'auto', objectFit: 'contain' }}
       />
 
       <div className="flex flex-col lg:flex-row items-center gap-10">
@@ -218,37 +218,37 @@ function RulesSlide() {
   ]
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-16 py-6">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-16 py-4">
       <div className="text-center">
         <p
           className="font-black text-yellow-400 uppercase tracking-widest"
-          style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1.1rem)' }}
+          style={{ fontSize: 'clamp(0.85rem, 1.6vw, 1.25rem)' }}
         >
           Don&apos;t be a Jabronie
         </p>
         <p
           className="font-black text-white mt-1"
-          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
+          style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}
         >
           The Rules
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 w-full max-w-5xl">
+      <div className="grid grid-cols-2 gap-2 w-full max-w-6xl">
         {rules.map((rule, i) => (
           <div
             key={i}
-            className="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
+            className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
           >
             <span
               className="font-black text-yellow-400 shrink-0 tabular-nums"
-              style={{ fontSize: 'clamp(0.85rem, 1.4vw, 1.1rem)' }}
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
             >
               {i + 1}.
             </span>
             <p
               className="text-white font-semibold leading-snug"
-              style={{ fontSize: 'clamp(0.85rem, 1.4vw, 1.1rem)' }}
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.4rem)' }}
             >
               {rule}
             </p>
