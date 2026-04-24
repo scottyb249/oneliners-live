@@ -180,6 +180,8 @@ export default function AcronymPicker({
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-yellow-400">
@@ -192,6 +194,34 @@ export default function AcronymPicker({
         </button>
       </div>
 
+      {/* Action bar — Break + Skip to KRACRONYM */}
+      <div className="flex gap-2">
+        <button
+          onClick={onTakeBreak}
+          className="flex-1 rounded-xl border border-white/20 px-3 py-2.5 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
+        >
+          ☕ Break
+        </button>
+        {!isFinalRound && (
+          <button
+            onClick={handleSkipToKracronym}
+            disabled={confirming}
+            className="flex-1 rounded-xl border border-yellow-400/60 bg-yellow-400/10 py-2.5 text-sm font-bold text-yellow-300 transition-all hover:bg-yellow-400/20 disabled:opacity-40"
+          >
+            {confirming ? 'Launching...' : '⚡ Skip to KRACRONYM'}
+          </button>
+        )}
+        {onBackToResults && (
+          <button
+            onClick={onBackToResults}
+            className="flex-1 rounded-xl border border-blue-400/30 bg-blue-400/5 py-2.5 text-sm font-bold text-blue-400 hover:border-blue-400/60 hover:bg-blue-400/10 transition-all"
+          >
+            ← Back to Results
+          </button>
+        )}
+      </div>
+
+      {/* Random preview card — shows when a random acronym is generated */}
       {randomAcronym && (
         <div className="flex items-center justify-between rounded-xl border border-purple-400/40 bg-purple-400/10 px-4 py-3">
           <div>
@@ -207,58 +237,30 @@ export default function AcronymPicker({
         </div>
       )}
 
-      <button
-        onClick={handleConfirm}
-        disabled={!activeAcronym || confirming}
-        className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {confirming
-          ? 'Starting...'
-          : activeAcronym
-          ? `Launch "${activeAcronym}" →`
-          : 'Select an acronym below'}
-      </button>
-
-      <div className="grid grid-cols-2 gap-2">
+      {/* Launch + Randomize — main action row above the list */}
+      <div className="flex gap-2">
         <button
-          onClick={onTakeBreak}
-          className="rounded-xl border border-white/20 px-3 py-3 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
+          onClick={handleConfirm}
+          disabled={!activeAcronym || confirming}
+          className="flex-1 rounded-xl bg-yellow-400 py-4 text-base font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          ☕ Break
+          {confirming
+            ? 'Starting...'
+            : activeAcronym
+            ? `Launch "${activeAcronym}" →`
+            : 'Select or randomize below'}
         </button>
         <button
-          onClick={onToggleLeaderboard}
-          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
-            game.show_leaderboard
-              ? 'border-yellow-400/60 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20'
-              : 'border-yellow-400/40 text-yellow-400/80 hover:border-yellow-400 hover:text-yellow-400'
-          }`}
+          onClick={handleShuffle}
+          className="rounded-xl border border-purple-400/40 bg-purple-400/10 px-6 py-4 text-base font-bold text-purple-400 hover:border-purple-400 hover:bg-purple-400/20 transition-all"
         >
-          {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
+          🎲 Randomize
         </button>
       </div>
 
-      {!isFinalRound && (
-        <button
-          onClick={handleSkipToKracronym}
-          disabled={confirming}
-          className="w-full rounded-xl border border-yellow-400/60 bg-yellow-400/10 py-3 text-sm font-bold text-yellow-300 transition-all hover:bg-yellow-400/20 disabled:opacity-40"
-        >
-          {confirming ? 'Launching...' : '⚡ Skip to KRACRONYM'}
-        </button>
-      )}
-
-      {onBackToResults && (
-        <button
-          onClick={onBackToResults}
-          className="w-full rounded-xl border border-blue-400/30 bg-blue-400/5 py-3 text-sm font-bold text-blue-400 hover:border-blue-400/60 hover:bg-blue-400/10 transition-all"
-        >
-          ← Back to Round Results
-        </button>
-      )}
-
       {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
+      {/* Theme filter */}
       <div className="flex items-center gap-2 flex-wrap">
         {themes.length > 2 && themes.map((theme) => (
           <button
@@ -271,14 +273,6 @@ export default function AcronymPicker({
             {theme === 'all' ? 'All' : theme}
           </button>
         ))}
-        {!randomAcronym && (
-          <button
-            onClick={handleShuffle}
-            className="ml-auto rounded-full border border-purple-400/40 px-3 py-1 text-sm font-medium text-purple-400 hover:border-purple-400 hover:bg-purple-400/10 transition-all"
-          >
-            🎲 Random
-          </button>
-        )}
       </div>
 
       {loading ? (
