@@ -107,18 +107,18 @@ export default function ActiveView({ game, answerCount }: Props) {
     )
   }
 
-  // ── REGULAR ROUND — unchanged from original ───────────────────────────────
+  // ── REGULAR ROUND ─────────────────────────────────────────────────────────
   const acronymFontSize =
-    letterCount <= 3 ? 'clamp(5rem, 22vw, 18rem)' :
-    letterCount === 4 ? 'clamp(4rem, 18vw, 15rem)' :
-    letterCount === 5 ? 'clamp(3rem, 14vw, 12rem)' :
-    'clamp(2.5rem, 10vw, 9rem)'
+    letterCount <= 3 ? 'clamp(8rem, 28vw, 22rem)' :
+    letterCount === 4 ? 'clamp(6rem, 22vw, 18rem)' :
+    letterCount === 5 ? 'clamp(5rem, 18vw, 14rem)' :
+    'clamp(3.5rem, 13vw, 11rem)'
 
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center gap-6 px-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center gap-8 px-12">
       <p
         className="font-semibold uppercase tracking-[0.4em] text-yellow-400"
-        style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
+        style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
       >
         Round {game.current_round}{game.is_final_round ? ' · KRACRONYM' : ''}
       </p>
@@ -131,8 +131,8 @@ export default function ActiveView({ game, answerCount }: Props) {
       </p>
 
       <p
-        className="font-bold text-white"
-        style={{ fontSize: 'clamp(1.25rem, 2.5vw, 2rem)' }}
+        className="font-bold text-white/70"
+        style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
       >
         {answerCount} {answerCount === 1 ? 'answer' : 'answers'} submitted
       </p>

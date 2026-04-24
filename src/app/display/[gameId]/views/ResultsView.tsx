@@ -190,7 +190,7 @@ export default function ResultsView({ game }: Props) {
   useEffect(() => {
     if (!isFinal || podiumStep !== 4) return
     setShowNameReveal(false)
-    const t = setTimeout(() => setShowNameReveal(true), 2800)
+    const t = setTimeout(() => setShowNameReveal(true), 5000)
     return () => clearTimeout(t)
   }, [isFinal, podiumStep])
 
@@ -266,15 +266,15 @@ export default function ResultsView({ game }: Props) {
           <div className="shrink-0 text-right">
             <p
               className="font-black text-yellow-400 tabular-nums"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)' }}
+              style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}
             >
               {answer.vote_count}
             </p>
-            <p className="text-xs text-white/30">
+            <p className="text-white/30" style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}>
               {answer.vote_count === 1 ? 'vote' : 'votes'}
             </p>
             {isFinal && answer.vote_count > 0 && (
-              <p className="text-xs font-bold text-yellow-400/70 mt-0.5">
+              <p className="font-bold text-yellow-400/70 mt-0.5" style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}>
                 = {answer.vote_count * 2} pts
               </p>
             )}
@@ -481,15 +481,6 @@ export default function ResultsView({ game }: Props) {
                 THE CHAMPION IS...
               </p>
             </div>
-
-            {/* Letter tiles */}
-            {letters.length > 0 && (
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                {letters.map((letter, i) => (
-                  <LetterTile key={i} letter={letter} delay={i * 180} />
-                ))}
-              </div>
-            )}
 
             <style>{`
               @keyframes pulse {

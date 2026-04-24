@@ -8,22 +8,26 @@ interface Props {
 
 export default function GetReadyView({ game }: Props) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center px-12">
+    <div className="flex flex-1 flex-col items-center justify-center gap-10 text-center px-12">
       <img
         src="/logo.png"
         alt="O.N.E. Liners Live"
-        style={{ height: 'clamp(6rem, 14vw, 12rem)', width: 'auto', objectFit: 'contain', opacity: 0.7 }}
+        style={{ height: 'clamp(10rem, 20vw, 18rem)', width: 'auto', objectFit: 'contain', opacity: 0.85 }}
       />
-      <div className="flex flex-col gap-3 items-center">
+      <div className="flex flex-col gap-4 items-center">
         <p
-          className="font-black text-white animate-pulse"
-          style={{ fontSize: 'clamp(3rem, 8vw, 7rem)' }}
+          className="font-black text-white"
+          style={{
+            fontSize: 'clamp(5rem, 14vw, 12rem)',
+            lineHeight: 1,
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }}
         >
           Get Ready...
         </p>
         <p
-          className="text-white/40 font-semibold uppercase tracking-widest"
-          style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.4rem)' }}
+          className="text-white/50 font-bold uppercase tracking-[0.4em]"
+          style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}
         >
           Next round coming up
         </p>
@@ -31,7 +35,7 @@ export default function GetReadyView({ game }: Props) {
       {game.host_name && (
         <p
           className="text-white/30 font-semibold"
-          style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.2rem)' }}
+          style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
         >
           Hosted by{' '}
           <span className="text-yellow-400/60">
@@ -39,6 +43,12 @@ export default function GetReadyView({ game }: Props) {
           </span>
         </p>
       )}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }
