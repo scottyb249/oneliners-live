@@ -34,7 +34,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [ending, setEnding] = useState(false)
   const [connectionLost, setConnectionLost] = useState(false)
-  const lastRealtimeRef = useRef<number>(Date.now())
 
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
@@ -84,7 +83,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
         (payload) => {
-          lastRealtimeRef.current = Date.now()
           setConnectionLost(false)
           setGame(payload.new as Game)
         },
@@ -93,7 +91,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
         () => {
-          lastRealtimeRef.current = Date.now()
           setConnectionLost(false)
           refreshPlayerCount()
         },
@@ -102,7 +99,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
         () => {
-          lastRealtimeRef.current = Date.now()
           refreshPlayerCount()
         },
       )
@@ -121,16 +117,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
-  // Heartbeat: warn if no realtime event in 45s during active game
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!game || game.status === 'ended' || game.status === 'waiting') return
-      if (Date.now() - lastRealtimeRef.current > 45_000) {
-        setConnectionLost(true)
-      }
-    }, 15_000)
-    return () => clearInterval(interval)
-  }, [game])
+
 
   useEffect(() => {
     if (!game || game.status === 'ended' || game.status === 'waiting' || game.status === 'picking') return

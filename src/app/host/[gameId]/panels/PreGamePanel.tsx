@@ -14,6 +14,96 @@ interface Props {
 const SLIDE_LABELS = ['Lobby', 'How to Play', 'Rules', 'Pledge']
 const TOTAL_SLIDES = SLIDE_LABELS.length
 
+// ─── Presenter View ───────────────────────────────────────────────────────────
+
+function PresenterLobby() {
+  return (
+    <div className="text-center py-2">
+      <p className="text-white/50 text-sm">Players are joining. Share the game code and QR code on the display screen.</p>
+    </div>
+  )
+}
+
+function PresenterHowToPlay() {
+  const steps = [
+    { icon: '📝', text: 'An acronym appears on screen — write the funniest phrase using those letters before time runs out.' },
+    { icon: '✅', text: 'Submit your answer to the host. The host will approve the top 10 to vote on — inappropriate answers will be removed.' },
+    { icon: '⚡', text: 'Fastest answer bonus! The first approved answer submitted each round earns +1 bonus point — speed matters!' },
+    { icon: '🗳️', text: 'Everyone votes for their favourite one-liner on their phone. You cannot vote for your own answer.' },
+    { icon: '🏆', text: 'Each vote = 1 point. The final KRACRONYM round is worth Double Points!' },
+    { icon: '🎁', text: 'Prizes for 1st, 2nd, and 3rd place at the end of the session.' },
+  ]
+  return (
+    <div className="flex flex-col gap-2">
+      {steps.map((step, i) => (
+        <div key={i} className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+          <span className="text-lg shrink-0">{step.icon}</span>
+          <p className="text-sm text-white/80 leading-snug">{step.text}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PresenterRules() {
+  const rules = [
+    'Host will narrow down answers to 10 if there are more than 10 players.',
+    'Do not use outside app help.',
+    'Submit fast — the first approved answer each round earns a +1 bonus point!',
+    'Similar or identical answers? First one in wins. Be unique.',
+    'The host sets the appropriateness level based on the crowd: G · PG · PG-13 · R · XXX.',
+    'Do not use your answer to harass a real person. Example: B.A.D. = "Bob\'s A D***".',
+    'Keep highly inflammatory political or religious content out of it. Host will not approve it.',
+    'Players and Teams will not be able to vote for their own response. If you\'re playing, you need to vote.',
+    'Judges can come and go whenever they want and join anytime.',
+  ]
+  return (
+    <div className="flex flex-col gap-1.5">
+      {rules.map((rule, i) => (
+        <div key={i} className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+          <span className="text-xs font-black text-yellow-400 shrink-0 tabular-nums pt-0.5">{i + 1}.</span>
+          <p className="text-sm text-white/80 leading-snug">{rule}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PresenterPledge() {
+  const lines = [
+    'I will not get mad at the host for not choosing my answer.',
+    'I will not personally harass or single out anyone in this room (unless they\'re on my team).',
+    'I will do my best to not get offended and ruin a good time.',
+    'The host is the moderator, tiebreaker, and judge of what\'s appropriate.',
+  ]
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-widest text-yellow-400 text-center mb-1">
+        Raise Your Right Hand &amp; Repeat After Me
+      </p>
+      {lines.map((line, i) => (
+        <div key={i} className="rounded-lg border border-yellow-400/20 bg-yellow-400/5 px-3 py-2">
+          <p className="text-sm text-white/80 leading-snug">&ldquo;{line}&rdquo;</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PresenterView({ slide }: { slide: number }) {
+  return (
+    <div className="w-full max-w-xs rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col gap-3">
+      <p className="text-xs font-semibold uppercase tracking-widest text-white/30 text-center">
+        📋 Presenter Notes — {SLIDE_LABELS[slide]}
+      </p>
+      {slide === 0 && <PresenterLobby />}
+      {slide === 1 && <PresenterHowToPlay />}
+      {slide === 2 && <PresenterRules />}
+      {slide === 3 && <PresenterPledge />}
+    </div>
+  )
+}
+
 export default function PreGamePanel({ game, playerCount, onStartGame }: Props) {
   const joinUrl = `https://onelinerslive.com/?code=${game.code}`
   const hasStarted = game.current_round > 1 || !!game.current_acronym
@@ -149,6 +239,9 @@ export default function PreGamePanel({ game, playerCount, onStartGame }: Props) 
                 </button>
               ))}
             </div>
+
+            {/* Presenter view — mirrors current display slide */}
+            <PresenterView slide={currentSlide} />
           </div>
         )}
       </div>

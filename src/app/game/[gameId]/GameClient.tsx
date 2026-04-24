@@ -82,7 +82,6 @@ export default function GameClient({ gameId, playerId }: Props) {
   const [leaderboard, setLeaderboard] = useState<{ name: string; score: number }[]>([])
 
   const lastActivityRef = useRef<number>(Date.now())
-  const lastRealtimeRef = useRef<number>(Date.now())
   const [connectionLost, setConnectionLost] = useState(false)
 
   async function refreshGame() {
@@ -140,7 +139,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         (payload) => {
           setGame(payload.new as Game)
           lastActivityRef.current = Date.now()
-          lastRealtimeRef.current = Date.now()
           setShowAbandonedBanner(false)
           setConnectionLost(false)
         },
@@ -149,7 +147,6 @@ export default function GameClient({ gameId, playerId }: Props) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
         () => {
-          lastRealtimeRef.current = Date.now()
           setConnectionLost(false)
           setPlayerCount((prev) => prev + 1)
         },
@@ -166,16 +163,7 @@ export default function GameClient({ gameId, playerId }: Props) {
     return () => { supabase.removeChannel(channel) }
   }, [gameId])
 
-  // Heartbeat: if no realtime event in 45s during active game, show connection warning
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!game || game.status === 'ended' || game.status === 'waiting') return
-      if (Date.now() - lastRealtimeRef.current > 45_000) {
-        setConnectionLost(true)
-      }
-    }, 15_000)
-    return () => clearInterval(interval)
-  }, [game])
+
 
   useEffect(() => {
     function handleVisibilityChange() {
