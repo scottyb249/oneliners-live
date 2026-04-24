@@ -331,6 +331,54 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
             </p>
             <p className="text-xs text-yellow-400/60">Step {podiumStep + 1} / 5</p>
           </div>
+
+          {/* Now Showing on Display */}
+          {(() => {
+            const getPlayer = (i: number) => {
+              const p = leaderboard[i]
+              if (!p) return null
+              return p.role === 'team_leader' && p.team_name ? p.team_name : p.name
+            }
+            const getScore = (i: number) => leaderboard[i]?.score ?? 0
+
+            let label = ''
+            let name = ''
+            let score: number | null = null
+
+            if (podiumStep === 0) {
+              label = '📊 KRACRONYM round results'
+            } else if (podiumStep === 1) {
+              label = '📋 The Rest of the Pack (4th+)'
+            } else if (podiumStep === 2) {
+              label = '🥉 Revealing 3rd Place'
+              name = getPlayer(2) ?? '—'
+              score = getScore(2)
+            } else if (podiumStep === 3) {
+              label = '🥈 Revealing 2nd Place'
+              name = getPlayer(1) ?? '—'
+              score = getScore(1)
+            } else if (podiumStep === 4) {
+              label = '🏆 Champion Reveal'
+              name = getPlayer(0) ?? '—'
+              score = getScore(0)
+            }
+
+            return (
+              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                <p className="text-xs text-white/30 mb-0.5 uppercase tracking-widest">Now on display</p>
+                <p className="text-sm font-bold text-white">{label}</p>
+                {name && (
+                  <p className="text-sm text-yellow-400 font-black mt-0.5">
+                    {name}
+                    {score !== null && (
+                      <span className="text-white/40 font-normal ml-2">{score} pts</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            )
+          })()}
+
           <p className="text-xs text-white/50">{PODIUM_STEP_LABELS[podiumStep]}</p>
           {podiumStep < 4 ? (
             <button
