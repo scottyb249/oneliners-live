@@ -273,6 +273,11 @@ export default function ResultsView({ game }: Props) {
             <p className="text-xs text-white/30">
               {answer.vote_count === 1 ? 'vote' : 'votes'}
             </p>
+            {isFinal && answer.vote_count > 0 && (
+              <p className="text-xs font-bold text-yellow-400/70 mt-0.5">
+                = {answer.vote_count * 2} pts
+              </p>
+            )}
           </div>
         </div>
       </div>

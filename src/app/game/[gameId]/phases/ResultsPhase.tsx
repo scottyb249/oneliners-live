@@ -11,6 +11,7 @@ interface Props {
 
 interface AnswerWithVotes extends Answer {
   vote_count: number
+  is_fastest: boolean
 }
 
 export default function ResultsPhase({ game, player }: Props) {
@@ -62,7 +63,7 @@ export default function ResultsPhase({ game, player }: Props) {
       }
 
       const withVotes: AnswerWithVotes[] = (answers as Answer[])
-        .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0 }))
+        .map((a) => ({ ...a, vote_count: tally[a.id] ?? 0, is_fastest: (a as any).is_fastest ?? false }))
         .sort((a, b) => b.vote_count - a.vote_count)
 
       setResults(withVotes)
@@ -224,12 +225,18 @@ export default function ResultsPhase({ game, player }: Props) {
                     #{i + 1} · {answer.players?.name ?? 'Unknown'}
                     {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
                     {highlight ? (isTeamMember ? ' · Your Team' : ' · You') : ''}
+                    {answer.is_fastest && (
+                      <span className="ml-2 text-yellow-400">⚡ Fastest +1</span>
+                    )}
                   </p>
                   <p className="text-base text-white">{answer.content}</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-2xl font-black text-yellow-400">{answer.vote_count}</p>
                   <p className="text-xs text-white/30">{answer.vote_count === 1 ? 'vote' : 'votes'}</p>
+                  {isFinal && answer.vote_count > 0 && (
+                    <p className="text-xs font-bold text-yellow-400/70 mt-0.5">= {answer.vote_count * 2} pts</p>
+                  )}
                 </div>
               </div>
             </div>
