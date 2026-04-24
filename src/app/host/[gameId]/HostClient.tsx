@@ -347,7 +347,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         </button>
 
         {/* Break — orange */}
-        {game.status !== 'waiting' && game.status !== 'ended' && (
+        {['active','voting','results','break','kracronym_intro','picking'].includes(game.status) && (
           <button
             onClick={handleTakeBreak}
             className="rounded-lg bg-orange-500/20 border border-orange-500/40 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/30 transition-all"
@@ -357,7 +357,7 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         )}
 
         {/* KRACRONYM — yellow/gold solid */}
-        {game.status !== 'waiting' && game.status !== 'ended' && !game.is_final_round && (
+        {['active','voting','results','break','kracronym_intro','picking'].includes(game.status) && !game.is_final_round && (
           <button
             onClick={handleFinalRound}
             className="rounded-lg bg-yellow-400 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-black hover:bg-yellow-300 transition-all"
