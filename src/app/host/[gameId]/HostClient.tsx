@@ -337,45 +337,71 @@ export default function HostClient({ gameId: rawGameId }: Props) {
         </div>
       )}
 
-      <div className="flex justify-end gap-2 px-4 pt-3">
+      <div className="flex justify-end gap-2 px-4 pt-3 flex-wrap">
+        {/* Players — white/neutral */}
         <button
           onClick={() => setShowPlayersPanel(true)}
-          className="rounded-lg border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/40 hover:border-white/30 hover:text-white transition-all"
+          className="rounded-lg bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all"
         >
           👥 Players {playerCount > 0 ? `(${playerCount})` : ''}
         </button>
+
+        {/* Break — orange */}
+        {game.status !== 'waiting' && game.status !== 'ended' && (
+          <button
+            onClick={handleTakeBreak}
+            className="rounded-lg bg-orange-500/20 border border-orange-500/40 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-400 hover:bg-orange-500/30 transition-all"
+          >
+            ☕ Break
+          </button>
+        )}
+
+        {/* KRACRONYM — yellow/gold solid */}
+        {game.status !== 'waiting' && game.status !== 'ended' && !game.is_final_round && (
+          <button
+            onClick={handleFinalRound}
+            className="rounded-lg bg-yellow-400 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-black hover:bg-yellow-300 transition-all"
+          >
+            ⚡ KRACRONYM
+          </button>
+        )}
+
+        {/* Leaderboard — purple */}
         <button
           onClick={handleToggleLeaderboard}
-          className={`rounded-lg border px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all ${
+          className={`rounded-lg border px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-all ${
             game.show_leaderboard
-              ? 'border-yellow-400/60 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20'
-              : 'border-white/10 text-white/30 hover:border-yellow-400/40 hover:text-yellow-400'
+              ? 'bg-purple-500/30 border-purple-400/60 text-purple-300 hover:bg-purple-500/40'
+              : 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20'
           }`}
         >
-          {game.show_leaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
+          {game.show_leaderboard ? '🏆 Hide Board' : '🏆 Standings'}
         </button>
 
+        {/* Display — blue solid */}
         {(game.display_close || game.display_active == null) ? (
           <button
             onClick={async () => {
               await supabase.from('games').update({ display_close: false, display_active: true }).eq('id', game.id)
               window.open(`/display/${game.id}`, 'oneliners-display', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no')
             }}
-            className="rounded-lg border border-blue-400/40 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-400 hover:border-blue-400 transition-all"
+            className="rounded-lg bg-blue-500 border border-blue-400 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white hover:bg-blue-400 transition-all"
           >
-            Open Display
+            🖥 Open Display
           </button>
         ) : (
           <button
             onClick={handleCloseDisplay}
-            className="rounded-lg border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/30 hover:border-red-500/40 hover:text-red-400 transition-all"
+            className="rounded-lg bg-blue-500/20 border border-blue-400/40 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-400 hover:bg-blue-500/30 transition-all"
           >
-            Close Display
+            🖥 Close Display
           </button>
         )}
+
+        {/* End Game — red solid */}
         <button
           onClick={() => setShowEndConfirm(true)}
-          className="rounded-lg border border-red-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-red-400 hover:border-red-400 hover:text-red-300 transition-all"
+          className="rounded-lg bg-red-500/20 border border-red-500/40 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/30 transition-all"
         >
           End Game
         </button>
@@ -390,8 +416,6 @@ export default function HostClient({ gameId: rawGameId }: Props) {
             letterCount={getLetterCount(pickerTargetRound, pickerIsFinalRound)}
             onCancel={handleCancelPicker}
             onConfirmed={() => setShowAcronymPicker(false)}
-            onTakeBreak={handleTakeBreak}
-            onToggleLeaderboard={handleToggleLeaderboard}
             onBackToResults={pickerCameFromResults ? handleBackToResults : undefined}
           />
         ) : (

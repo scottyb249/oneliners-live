@@ -12,8 +12,6 @@ interface Props {
   letterCount: number
   onCancel: () => void
   onConfirmed: () => void
-  onTakeBreak: () => void
-  onToggleLeaderboard: () => void
   onBackToResults?: () => void
 }
 
@@ -24,8 +22,6 @@ export default function AcronymPicker({
   letterCount,
   onCancel,
   onConfirmed,
-  onTakeBreak,
-  onToggleLeaderboard,
   onBackToResults,
 }: Props) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -84,32 +80,6 @@ export default function AcronymPicker({
     }
     load()
   }, [letterCount])
-
-  async function handleSkipToKracronym() {
-    if (confirming) return
-    setConfirming(true)
-    setError('')
-
-    const { error: updateErr } = await supabase
-      .from('games')
-      .update({
-        status: 'kracronym_intro',
-        is_final_round: true,
-        current_round: targetRound,
-        reveal_index: -1,
-        podium_step: 0,
-        show_leaderboard: false,
-      })
-      .eq('id', game.id)
-
-    if (updateErr) {
-      setError('Failed to launch KRACRONYM. Try again.')
-      setConfirming(false)
-      return
-    }
-
-    onConfirmed()
-  }
 
   async function handleConfirm() {
     if ((!selected && !randomAcronym) || confirming) return
@@ -192,33 +162,6 @@ export default function AcronymPicker({
         <button onClick={onCancel} className="text-sm text-white/30 hover:text-white transition-colors">
           Cancel
         </button>
-      </div>
-
-      {/* Action bar — Break + Skip to KRACRONYM */}
-      <div className="flex gap-2">
-        <button
-          onClick={onTakeBreak}
-          className="flex-1 rounded-xl border border-white/20 px-3 py-2.5 text-sm font-bold text-white/70 hover:border-white/40 hover:text-white transition-all"
-        >
-          ☕ Break
-        </button>
-        {!isFinalRound && (
-          <button
-            onClick={handleSkipToKracronym}
-            disabled={confirming}
-            className="flex-1 rounded-xl border border-yellow-400/60 bg-yellow-400/10 py-2.5 text-sm font-bold text-yellow-300 transition-all hover:bg-yellow-400/20 disabled:opacity-40"
-          >
-            {confirming ? 'Launching...' : '⚡ Skip to KRACRONYM'}
-          </button>
-        )}
-        {onBackToResults && (
-          <button
-            onClick={onBackToResults}
-            className="flex-1 rounded-xl border border-blue-400/30 bg-blue-400/5 py-2.5 text-sm font-bold text-blue-400 hover:border-blue-400/60 hover:bg-blue-400/10 transition-all"
-          >
-            ← Back to Results
-          </button>
-        )}
       </div>
 
       {/* Random preview card — shows when a random acronym is generated */}
