@@ -151,6 +151,18 @@ export default function GameClient({ gameId, playerId }: Props) {
           setPlayerCount((prev) => prev + 1)
         },
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'players', filter: `id=eq.${playerId}` },
+        (payload) => {
+          const updated = payload.new as { kicked?: boolean }
+          if (updated.kicked) {
+            localStorage.removeItem('one_game_id')
+            localStorage.removeItem('one_player_id')
+            window.location.href = '/?kicked=1'
+          }
+        },
+      )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           setConnectionLost(true)

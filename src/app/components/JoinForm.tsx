@@ -43,9 +43,21 @@ export default function JoinForm() {
   const [teamsLoading, setTeamsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [wasKicked, setWasKicked] = useState(false)
+
+  // Check for kicked redirect before attempting session resume
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('kicked') === '1') {
+      setWasKicked(true)
+      window.history.replaceState({}, '', '/')
+    }
+  }, [])
 
   // Resume session only if player record still exists in Supabase
+  // Skip if they were just kicked
   useEffect(() => {
+    if (wasKicked) return
     const savedGameId = localStorage.getItem('one_game_id')
     const savedPlayerId = localStorage.getItem('one_player_id')
     if (!savedGameId || !savedPlayerId) return
@@ -65,7 +77,7 @@ export default function JoinForm() {
       }
     }
     verifySession()
-  }, [router])
+  }, [router, wasKicked])
 
   // When role is team_member and game code is entered, fetch existing teams
   useEffect(() => {
@@ -172,6 +184,14 @@ export default function JoinForm() {
 
   return (
     <form onSubmit={handleJoin} className="w-full max-w-md space-y-6">
+      {/* Kicked banner */}
+      {wasKicked && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-center">
+          <p className="text-base font-bold text-white">You've been removed from the game.</p>
+          <p className="text-sm text-white/50 mt-1">Contact the host if you think this was a mistake.</p>
+        </div>
+      )}
+
       {/* Game Code */}
       <div className="space-y-2">
         <label htmlFor="game-code" className="block text-sm font-semibold uppercase tracking-widest text-yellow-400">

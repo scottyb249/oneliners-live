@@ -12,6 +12,7 @@ import VotingPanel from './panels/VotingPanel'
 import ResultsPanel from './panels/ResultsPanel'
 import BreakPanel from './panels/BreakPanel'
 import KracronymIntroPanel from './panels/KracronymIntroPanel'
+import PlayersPanel from './panels/PlayersPanel'
 
 const ROUND_PATTERN = [3, 4, 4, 5, 5]
 
@@ -34,6 +35,9 @@ export default function HostClient({ gameId: rawGameId }: Props) {
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [ending, setEnding] = useState(false)
   const [connectionLost, setConnectionLost] = useState(false)
+  const [showPlayersPanel, setShowPlayersPanel] = useState(false)
+  const [joinToast, setJoinToast] = useState<string | null>(null)
+  const joinToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [showAcronymPicker, setShowAcronymPicker] = useState(false)
   const [pickerTargetRound, setPickerTargetRound] = useState(1)
@@ -90,9 +94,16 @@ export default function HostClient({ gameId: rawGameId }: Props) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'players', filter: `game_id=eq.${gameId}` },
-        () => {
+        (payload) => {
           setConnectionLost(false)
           refreshPlayerCount()
+          // Join toast — show player name briefly
+          const name = (payload.new as { name?: string }).name
+          if (name) {
+            if (joinToastTimer.current) clearTimeout(joinToastTimer.current)
+            setJoinToast(name)
+            joinToastTimer.current = setTimeout(() => setJoinToast(null), 4000)
+          }
         },
       )
       .on(
@@ -328,6 +339,12 @@ export default function HostClient({ gameId: rawGameId }: Props) {
 
       <div className="flex justify-end gap-2 px-4 pt-3">
         <button
+          onClick={() => setShowPlayersPanel(true)}
+          className="rounded-lg border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/40 hover:border-white/30 hover:text-white transition-all"
+        >
+          👥 Players {playerCount > 0 ? `(${playerCount})` : ''}
+        </button>
+        <button
           onClick={handleToggleLeaderboard}
           className={`rounded-lg border px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition-all ${
             game.show_leaderboard
@@ -417,6 +434,27 @@ export default function HostClient({ gameId: rawGameId }: Props) {
           </>
         )}
       </div>
+
+      {/* Join toast */}
+      {joinToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+          <div className="rounded-xl border border-green-500/40 bg-zinc-900 px-5 py-3 shadow-xl flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse inline-block" />
+            <p className="text-sm font-semibold text-white">
+              <span className="text-green-400">{joinToast}</span> joined the game
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Players panel overlay */}
+      {showPlayersPanel && (
+        <div className="fixed inset-0 z-40 flex flex-col bg-zinc-950">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <PlayersPanel game={game} onClose={() => setShowPlayersPanel(false)} />
+          </div>
+        </div>
+      )}
 
       {showEndConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
