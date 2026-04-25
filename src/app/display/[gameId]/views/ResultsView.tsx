@@ -232,7 +232,8 @@ export default function ResultsView({ game }: Props) {
 
     return (
       <div
-        className={`flex-1 rounded-2xl border flex flex-col justify-center px-6 py-4 ${
+        style={{ height: '100%' }}
+        className={`rounded-2xl border flex flex-col justify-center px-6 py-4 ${
           isNewest
             ? i === 0
               ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
@@ -242,24 +243,24 @@ export default function ResultsView({ game }: Props) {
             : 'border-white/10 bg-white/5'
         }`}
       >
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 h-full">
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white/50 mb-2" style={{ fontSize: 'clamp(0.8rem, 1.4vw, 1.1rem)' }}>
+            <p className="font-bold text-white/60 mb-2" style={{ fontSize: 'clamp(0.9rem, 1.6vw, 1.3rem)' }}>
               {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
-              <span className="text-white/70">{answer.players?.name ?? '—'}</span>
+              <span className="text-white/80">{answer.players?.name ?? '—'}</span>
               {answer.players?.team_name && (
-                <span className="text-yellow-400/70"> · {answer.players.team_name}</span>
+                <span className="text-yellow-400/80"> · {answer.players.team_name}</span>
               )}
               {answer.is_fastest && (
                 <span className="ml-2 text-yellow-400"> ⚡ Fastest +1</span>
               )}
             </p>
-            <p className="font-black text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 3vw, 2.75rem)', wordBreak: 'break-word' }}>
+            <p className="font-black text-white leading-tight" style={{ fontSize: 'clamp(1.8rem, 4vw, 3.5rem)', wordBreak: 'break-word' }}>
               {answer.content}
             </p>
           </div>
           <div className="shrink-0 text-right pl-4">
-            <p className="font-black text-yellow-400 tabular-nums leading-none" style={{ fontSize: 'clamp(2.5rem, 5vw, 5rem)' }}>
+            <p className="font-black text-yellow-400 tabular-nums leading-none" style={{ fontSize: 'clamp(3.5rem, 7vw, 7rem)' }}>
               {answer.vote_count}
             </p>
             <p className="text-white/40 font-semibold" style={{ fontSize: 'clamp(0.7rem, 1.1vw, 0.95rem)' }}>
@@ -285,26 +286,26 @@ export default function ResultsView({ game }: Props) {
     const isSingle = answers.length <= 5
 
     return (
-      <div className={`grid gap-3 w-full h-full ${isSingle ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <div className="flex flex-col gap-3 h-full">
+      <div style={{ display: 'grid', gridTemplateColumns: isSingle ? '1fr' : '1fr 1fr', gap: '12px', flex: 1, minHeight: 0, height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
           {col1.map((answer, i) => {
             const isRevealed = i >= revealThreshold
             const isNewest = i === revealThreshold
             return (
-              <div key={answer.id} className="flex-1 flex flex-col" style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
+              <div key={answer.id} style={{ flex: 1, minHeight: 0, transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
                 <AnswerCard answer={answer} i={i} isNewest={isNewest} />
               </div>
             )
           })}
         </div>
         {!isSingle && (
-          <div className="flex flex-col gap-3 h-full">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
             {col2.map((answer, i) => {
               const globalIndex = i + 5
               const isRevealed = globalIndex >= revealThreshold
               const isNewest = globalIndex === revealThreshold
               return (
-                <div key={answer.id} className="flex-1 flex flex-col" style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
+                <div key={answer.id} style={{ flex: 1, minHeight: 0, transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
                   <AnswerCard answer={answer} i={globalIndex} isNewest={isNewest} />
                 </div>
               )
@@ -321,14 +322,14 @@ export default function ResultsView({ game }: Props) {
     // Step 0: answer reveal
     if (podiumStep === 0) {
       return (
-        <div className="flex flex-1 flex-col gap-3 px-8 py-6">
+        <div className="flex flex-1 flex-col gap-3 px-8 py-6" style={{ height: '100%' }}>
           <p
             className="font-semibold uppercase tracking-[0.4em] text-yellow-400 shrink-0"
             style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
           >
             KRACRONYM · Round {game.current_round} · Results
           </p>
-          <div className="flex-1 flex flex-col min-h-0">
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <AnswerGrid answers={results} />
           </div>
         </div>
@@ -664,15 +665,15 @@ export default function ResultsView({ game }: Props) {
   const showLeaderboard = podiumStep >= 1
 
   return (
-    <div className="flex flex-1 gap-6 px-8 py-6 min-h-0">
-      <div className={`flex flex-col gap-3 min-h-0 ${showLeaderboard ? 'flex-[3]' : 'flex-1'}`}>
+    <div className="flex flex-1 gap-6 px-8 py-6" style={{ minHeight: 0, height: '100%' }}>
+      <div className={`flex flex-col gap-3 ${showLeaderboard ? 'flex-[3]' : 'flex-1'}`} style={{ minHeight: 0 }}>
         <p
           className="font-semibold uppercase tracking-[0.4em] text-yellow-400 shrink-0"
           style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
         >
           Round {game.current_round} · Results
         </p>
-        <div className="flex-1 flex flex-col min-h-0">
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <AnswerGrid answers={results} />
         </div>
       </div>
