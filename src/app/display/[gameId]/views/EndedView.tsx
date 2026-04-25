@@ -134,20 +134,20 @@ export default function EndedView({ game }: Props) {
 
       {/* Olympic Podium — centered, fills most of screen */}
       {top3.length > 0 && (
-        <div className="relative z-10 flex w-full items-end justify-center gap-6 px-2 max-w-5xl" style={{ height: '58vh', marginTop: '2vh' }}>
+        <div className="relative z-10 flex w-full items-end justify-center gap-4 px-2 max-w-6xl" style={{ height: '62vh', marginTop: '1vh' }}>
           {PODIUM_ORDER.map((leaderIdx, podiumIdx) => {
             const player = top3[leaderIdx]
             if (!player) return <div key={podiumIdx} className="flex-1" />
             const displayName = player.team_name ?? player.name
-            const podiumHeightVh = ['28vh', '42vh', '18vh'][podiumIdx]
+            const podiumHeightVh = ['22vh', '32vh', '15vh'][podiumIdx]
             return (
               <div key={player.id} className="flex flex-1 flex-col items-center" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                <div className="flex flex-col items-center gap-2 text-center shrink-0 mb-3">
-                  <span className={TROPHY_COLORS[leaderIdx]} style={{ fontSize: 'clamp(3rem, 6vw, 6rem)' }}>🏆</span>
-                  <p className="font-black text-white leading-tight px-2" style={{ fontSize: 'clamp(1.5rem, 3vw, 3rem)' }}>
+                <div className="flex flex-col items-center gap-1 text-center shrink-0 mb-3 w-full px-2">
+                  <span className={TROPHY_COLORS[leaderIdx]} style={{ fontSize: 'clamp(2rem, 4.5vw, 4.5rem)' }}>🏆</span>
+                  <p className="font-black text-white leading-tight w-full" style={{ fontSize: 'clamp(1rem, 2.2vw, 2.2rem)', wordBreak: 'break-word' }}>
                     {displayName}
                   </p>
-                  <p className="font-black text-yellow-400 tabular-nums" style={{ fontSize: 'clamp(1.1rem, 2.2vw, 2rem)' }}>
+                  <p className="font-black text-yellow-400 tabular-nums" style={{ fontSize: 'clamp(0.9rem, 1.8vw, 1.6rem)' }}>
                     {player.score} pts
                   </p>
                 </div>
@@ -155,7 +155,7 @@ export default function EndedView({ game }: Props) {
                   className={`w-full rounded-t-2xl border-2 bg-gradient-to-b flex items-center justify-center shrink-0 ${PODIUM_COLORS[podiumIdx]}`}
                   style={{ height: podiumHeightVh }}
                 >
-                  <p className="font-black text-white/90" style={{ fontSize: 'clamp(2.5rem, 5.5vw, 5rem)' }}>
+                  <p className="font-black text-white/90" style={{ fontSize: 'clamp(2rem, 4.5vw, 4rem)' }}>
                     {PLACE_LABELS[podiumIdx]}
                   </p>
                 </div>
