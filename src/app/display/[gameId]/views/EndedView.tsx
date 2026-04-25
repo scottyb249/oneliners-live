@@ -119,66 +119,42 @@ export default function EndedView({ game }: Props) {
   const rest = leaderboard.slice(3)
 
   return (
-    <div className="relative flex flex-1 flex-col items-center gap-6 px-12 py-8 overflow-auto">
+    <div className="relative flex flex-1 flex-col items-center justify-between px-8 py-6 overflow-hidden">
       <Confetti />
 
       {/* Title */}
-      <div className="relative z-10 text-center">
-        <p
-          className="font-black text-yellow-400 leading-none"
-          style={{ fontSize: 'clamp(2.5rem, 7vw, 6rem)' }}
-        >
+      <div className="relative z-10 text-center shrink-0">
+        <p className="font-black text-yellow-400 leading-none" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
           Game Over!
         </p>
-        <p
-          className="mt-2 font-semibold text-white/50"
-          style={{ fontSize: 'clamp(0.875rem, 2vw, 1.5rem)' }}
-        >
+        <p className="mt-1 font-semibold text-white/50" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>
           Thanks for playing O.N.E. Liners Live!
         </p>
       </div>
 
-      {/* Olympic Podium */}
       {top3.length > 0 && (
-        <div className="relative z-10 flex w-full max-w-4xl items-end justify-center gap-3">
+        <div className="relative z-10 flex w-full flex-1 items-end justify-center gap-4 px-4 py-2 max-w-5xl">
           {PODIUM_ORDER.map((leaderIdx, podiumIdx) => {
             const player = top3[leaderIdx]
             if (!player) return <div key={podiumIdx} className="flex-1" />
-
             const displayName = player.team_name ?? player.name
-
+            const podiumHeights = ['45%', '65%', '30%']
             return (
-              <div key={player.id} className="flex flex-1 flex-col items-center gap-2">
-                {/* Trophy + name above podium */}
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <span
-                    className={TROPHY_COLORS[leaderIdx]}
-                    style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}
-                  >
-                    🏆
-                  </span>
-                  <p
-                    className="font-black text-white leading-tight px-2"
-                    style={{ fontSize: 'clamp(1rem, 2.2vw, 1.75rem)' }}
-                  >
+              <div key={player.id} className="flex flex-1 flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <span className={TROPHY_COLORS[leaderIdx]} style={{ fontSize: 'clamp(2.5rem, 5vw, 5rem)' }}>&#x1F3C6;</span>
+                  <p className="font-black text-white leading-tight px-2" style={{ fontSize: 'clamp(1.25rem, 2.8vw, 2.5rem)' }}>
                     {displayName}
                   </p>
-                  <p
-                    className="font-black text-yellow-400 tabular-nums"
-                    style={{ fontSize: 'clamp(1rem, 2vw, 1.5rem)' }}
-                  >
+                  <p className="font-black text-yellow-400 tabular-nums" style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}>
                     {player.score} pts
                   </p>
                 </div>
-
-                {/* Podium block */}
                 <div
-                  className={`w-full rounded-t-2xl border-2 bg-gradient-to-b flex items-center justify-center ${PODIUM_HEIGHTS[podiumIdx]} ${PODIUM_COLORS[leaderIdx]}`}
+                  className={}
+                  style={{ height: podiumHeights[podiumIdx], minHeight: '80px' }}
                 >
-                  <p
-                    className="font-black text-white/80"
-                    style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)' }}
-                  >
+                  <p className="font-black text-white/90" style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}>
                     {PLACE_LABELS[podiumIdx]}
                   </p>
                 </div>
@@ -188,32 +164,13 @@ export default function EndedView({ game }: Props) {
         </div>
       )}
 
-      {/* 4th place and below */}
       {rest.length > 0 && (
-        <div className="relative z-10 w-full max-w-2xl flex flex-col gap-2">
+        <div className="relative z-10 w-full max-w-3xl flex flex-wrap justify-center gap-2 shrink-0">
           {rest.map((player, i) => (
-            <div
-              key={player.id}
-              className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-3"
-            >
-              <span
-                className="font-bold text-white/30 w-8 shrink-0 tabular-nums"
-                style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
-              >
-                #{i + 4}
-              </span>
-              <p
-                className="flex-1 font-semibold text-white truncate"
-                style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
-              >
-                {player.team_name ?? player.name}
-              </p>
-              <p
-                className="font-black text-white/60 tabular-nums shrink-0"
-                style={{ fontSize: 'clamp(0.875rem, 1.8vw, 1.5rem)' }}
-              >
-                {player.score} pts
-              </p>
+            <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+              <span className="font-bold text-white/30 tabular-nums" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>#{i + 4}</span>
+              <p className="font-semibold text-white" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>{player.team_name ?? player.name}</p>
+              <p className="font-black text-white/50 tabular-nums" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>{player.score} pts</p>
             </div>
           ))}
         </div>
