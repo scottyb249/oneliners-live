@@ -51,13 +51,21 @@ export default function KracronymIntroPanel({ game, onPickAcronym, onToggleLeade
       </div>
 
       {acronymReady ? (
-        <button
-          onClick={handleLaunchNow}
-          disabled={launching}
-          className="w-full max-w-xs rounded-xl bg-yellow-400 px-6 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50"
-        >
-          {launching ? 'Launching...' : `Launch "${game.current_acronym}" →`}
-        </button>
+        <>
+          <button
+            onClick={handleLaunchNow}
+            disabled={launching}
+            className="w-full max-w-xs rounded-xl bg-yellow-400 px-6 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50"
+          >
+            {launching ? 'Launching...' : `Launch "${game.current_acronym}" →`}
+          </button>
+          <button
+            onClick={onPickAcronym}
+            className="text-sm text-white/30 hover:text-white/60 transition-colors underline underline-offset-2"
+          >
+            Change Acronym
+          </button>
+        </>
       ) : (
         <button
           onClick={onPickAcronym}

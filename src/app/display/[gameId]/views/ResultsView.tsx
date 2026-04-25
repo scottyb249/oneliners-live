@@ -226,14 +226,13 @@ export default function ResultsView({ game }: Props) {
 
   // ── Answer card ───────────────────────────────────────────────────────────
   function AnswerCard({ answer, i, isNewest }: { answer: AnswerWithVotes; i: number; isNewest: boolean }) {
+    const pts = isFinal
+      ? answer.vote_count * 2 + (answer.is_fastest ? 1 : 0)
+      : answer.vote_count
+
     return (
       <div
-        style={{
-          transition: 'opacity 0.6s ease, transform 0.6s ease',
-          opacity: 1,
-          transform: 'translateY(0)',
-        }}
-        className={`rounded-2xl border px-5 py-4 ${
+        className={`rounded-2xl border px-4 py-3 ${
           isNewest
             ? i === 0
               ? 'border-yellow-400 bg-yellow-400/20 shadow-lg shadow-yellow-400/20'
@@ -243,43 +242,75 @@ export default function ResultsView({ game }: Props) {
             : 'border-white/10 bg-white/5'
         }`}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p
-              className="font-semibold text-white/50 mb-1"
-              style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}
-            >
+            <p className="font-semibold text-white/50 mb-1 truncate" style={{ fontSize: 'clamp(0.65rem, 1vw, 0.85rem)' }}>
               {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
               {answer.players?.name ?? '—'}
               {answer.players?.team_name ? ` · ${answer.players.team_name}` : ''}
-              {answer.is_fastest && (
-                <span className="ml-2 text-yellow-400 font-bold">⚡ Fastest +1</span>
-              )}
             </p>
-            <p
-              className="font-semibold text-white leading-snug"
-              style={{ fontSize: 'clamp(1rem, 2vw, 1.75rem)' }}
-            >
+            <p className="font-bold text-white leading-snug" style={{ fontSize: 'clamp(0.9rem, 1.8vw, 1.5rem)', wordBreak: 'break-word' }}>
               {answer.content}
             </p>
+            {answer.is_fastest && (
+              <p className="mt-1 text-yellow-400 font-bold" style={{ fontSize: 'clamp(0.65rem, 1vw, 0.85rem)' }}>
+                ⚡ Fastest +1
+              </p>
+            )}
           </div>
-          <div className="shrink-0 text-right">
-            <p
-              className="font-black text-yellow-400 tabular-nums"
-              style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}
-            >
+          <div className="shrink-0 text-right pl-2">
+            <p className="font-black text-yellow-400 tabular-nums leading-none" style={{ fontSize: 'clamp(1.5rem, 3vw, 2.75rem)' }}>
               {answer.vote_count}
             </p>
-            <p className="text-white/30" style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}>
+            <p className="text-white/30" style={{ fontSize: 'clamp(0.6rem, 0.9vw, 0.8rem)' }}>
               {answer.vote_count === 1 ? 'vote' : 'votes'}
             </p>
-            {isFinal && answer.vote_count > 0 && (
-              <p className="font-bold text-yellow-400/70 mt-0.5" style={{ fontSize: 'clamp(0.75rem, 1.2vw, 1rem)' }}>
-                = {answer.vote_count * 2} pts
+            {isFinal && (
+              <p className="font-black text-yellow-400/80 mt-0.5" style={{ fontSize: 'clamp(0.65rem, 1vw, 0.85rem)' }}>
+                {answer.vote_count > 0
+                  ? `${answer.vote_count}×2${answer.is_fastest ? '+1' : ''}=${pts}pts`
+                  : <span className="text-white/20">0 pts</span>}
               </p>
             )}
           </div>
         </div>
+      </div>
+    )
+  }
+
+  // ── Two-column answer grid ────────────────────────────────────────────────
+  function AnswerGrid({ answers }: { answers: AnswerWithVotes[] }) {
+    const col1 = answers.slice(0, 5)
+    const col2 = answers.slice(5, 10)
+    const isSingle = answers.length <= 5
+
+    return (
+      <div className={`grid gap-3 w-full ${isSingle ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        <div className="flex flex-col gap-3">
+          {col1.map((answer, i) => {
+            const isRevealed = i >= revealThreshold
+            const isNewest = i === revealThreshold
+            return (
+              <div key={answer.id} style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
+                <AnswerCard answer={answer} i={i} isNewest={isNewest} />
+              </div>
+            )
+          })}
+        </div>
+        {!isSingle && (
+          <div className="flex flex-col gap-3">
+            {col2.map((answer, i) => {
+              const globalIndex = i + 5
+              const isRevealed = globalIndex >= revealThreshold
+              const isNewest = globalIndex === revealThreshold
+              return (
+                <div key={answer.id} style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', opacity: isRevealed ? 1 : 0, transform: isRevealed ? 'translateY(0)' : 'translateY(16px)' }}>
+                  <AnswerCard answer={answer} i={globalIndex} isNewest={isNewest} />
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }
@@ -290,30 +321,15 @@ export default function ResultsView({ game }: Props) {
     // Step 0: answer reveal
     if (podiumStep === 0) {
       return (
-        <div className="flex flex-1 flex-col gap-4 px-10 py-6 overflow-hidden">
+        <div className="flex flex-1 flex-col gap-4 px-8 py-6 overflow-hidden">
           <p
             className="font-semibold uppercase tracking-[0.4em] text-yellow-400 shrink-0"
             style={{ fontSize: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}
           >
             KRACRONYM · Round {game.current_round} · Results
           </p>
-          <div className="flex flex-col gap-3 overflow-auto">
-            {results.map((answer, i) => {
-              const isRevealed = i >= revealThreshold
-              const isNewest = i === revealThreshold
-              return (
-                <div
-                  key={answer.id}
-                  style={{
-                    transition: 'opacity 0.6s ease, transform 0.6s ease',
-                    opacity: isRevealed ? 1 : 0,
-                    transform: isRevealed ? 'translateY(0)' : 'translateY(16px)',
-                  }}
-                >
-                  <AnswerCard answer={answer} i={i} isNewest={isNewest} />
-                </div>
-              )
-            })}
+          <div className="overflow-auto flex-1">
+            <AnswerGrid answers={results} />
           </div>
         </div>
       )
@@ -386,57 +402,119 @@ export default function ResultsView({ game }: Props) {
       )
     }
 
-    // Steps 2 & 3: 3rd place and 2nd place (unchanged popIn)
+    // Steps 2 & 3: 3rd place and 2nd place — full screen with colored confetti
     if (podiumStep === 2 || podiumStep === 3) {
       const placeIndex = podiumStep - 2   // 0 = 3rd, 1 = 2nd
       const leaderIndex = 2 - placeIndex  // 2 = 3rd place player, 1 = 2nd place player
-      const placeLabels = ['3rd Place', '2nd Place']
-      const placeColors = [
-        'border-amber-500/60 bg-amber-600/10 text-amber-500',
-        'border-zinc-400/60 bg-zinc-400/10 text-zinc-300',
-      ]
-      const trophyEmojis = ['🥉', '🥈']
-      const pointColors = ['text-amber-500', 'text-zinc-300']
 
+      const configs = [
+        {
+          label: '3RD PLACE',
+          trophySize: 'clamp(5rem, 12vw, 9rem)',
+          nameColor: 'text-amber-400',
+          ptsColor: 'text-amber-500',
+          labelColor: 'text-amber-500/80',
+          bg: 'radial-gradient(ellipse at center, #1a0800 0%, #000000 100%)',
+          glow: 'rgba(180,90,20,0.2)',
+          confettiColors: ['#cd7f32', '#b87333', '#e8a060', '#f0c070', '#ffffff', '#8b4513'],
+        },
+        {
+          label: '2ND PLACE',
+          trophySize: 'clamp(6rem, 14vw, 11rem)',
+          nameColor: 'text-zinc-100',
+          ptsColor: 'text-zinc-300',
+          labelColor: 'text-zinc-400',
+          bg: 'radial-gradient(ellipse at center, #0a0a14 0%, #000000 100%)',
+          glow: 'rgba(180,180,220,0.2)',
+          confettiColors: ['#c0c0c0', '#a8a8b8', '#e0e0f0', '#808090', '#ffffff', '#d0d0e0'],
+        },
+      ]
+
+      const cfg = configs[placeIndex]
       const player = leaderboard[leaderIndex]
       const displayName = player?.team_name ?? player?.name ?? '—'
 
+      function PlaceConfetti() {
+        const canvasRef = useRef<HTMLCanvasElement>(null)
+        useEffect(() => {
+          const canvas = canvasRef.current
+          if (!canvas) return
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return
+          canvas.width = window.innerWidth
+          canvas.height = window.innerHeight
+          const pieces: { x: number; y: number; w: number; h: number; color: string; rot: number; vx: number; vy: number; vr: number }[] = []
+          for (let i = 0; i < 160; i++) {
+            pieces.push({
+              x: Math.random() * canvas.width,
+              y: -20 - Math.random() * 300,
+              w: 7 + Math.random() * 8, h: 4 + Math.random() * 4,
+              color: cfg.confettiColors[Math.floor(Math.random() * cfg.confettiColors.length)],
+              rot: Math.random() * Math.PI * 2,
+              vx: (Math.random() - 0.5) * 2.5, vy: 2 + Math.random() * 3,
+              vr: (Math.random() - 0.5) * 0.15,
+            })
+          }
+          let running = true
+          function draw() {
+            if (!running || !ctx || !canvas) return
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            for (const p of pieces) {
+              ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot)
+              ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+              ctx.restore()
+              p.x += p.vx; p.y += p.vy; p.rot += p.vr
+              if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width }
+            }
+            requestAnimationFrame(draw)
+          }
+          draw()
+          return () => { running = false }
+        }, [])
+        return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" style={{ width: '100%', height: '100%' }} />
+      }
+
       return (
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-12 text-center">
-          <p
-            className="font-black text-yellow-400 uppercase tracking-widest"
-            style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}
-          >
-            Final Results · KRACRONYM
-          </p>
-          <div
-            style={{ animation: 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }}
-            className={`flex flex-col items-center gap-4 rounded-3xl border-2 px-16 py-12 ${placeColors[placeIndex]}`}
-          >
-            <p style={{ fontSize: 'clamp(4rem, 10vw, 8rem)' }}>{trophyEmojis[placeIndex]}</p>
-            <p
-              className="font-black uppercase tracking-widest"
-              style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}
-            >
-              {placeLabels[placeIndex]}
-            </p>
-            <p
-              className="font-black text-white leading-tight"
-              style={{ fontSize: 'clamp(2rem, 6vw, 5rem)' }}
-            >
-              {displayName}
-            </p>
-            <p
-              className={`font-black tabular-nums ${pointColors[placeIndex]}`}
-              style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)' }}
-            >
-              {player?.score ?? 0} pts
-            </p>
+        <div
+          className="relative flex flex-1 flex-col items-center justify-center gap-6 px-12 text-center overflow-hidden"
+          style={{ background: cfg.bg }}
+        >
+          <PlaceConfetti />
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 50% 50%, ${cfg.glow} 0%, transparent 65%)` }} />
+
+          <div className="relative z-10 flex flex-col items-center gap-5">
+            <div style={{ animation: 'trophyDrop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both' }}>
+              <p style={{ fontSize: cfg.trophySize, lineHeight: 1, filter: `drop-shadow(0 0 20px ${cfg.glow})` }}>🏆</p>
+            </div>
+            <div style={{ animation: 'slideUp 0.4s ease 0.2s both' }}>
+              <p className={`font-black uppercase tracking-[0.4em] ${cfg.labelColor}`} style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}>
+                {cfg.label}
+              </p>
+            </div>
+            <div style={{ animation: 'nameSplash 0.7s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s both' }}>
+              <p className={`font-black leading-none ${cfg.nameColor}`} style={{ fontSize: 'clamp(2.5rem, 8vw, 7rem)', textShadow: `0 0 40px ${cfg.glow}` }}>
+                {displayName}
+              </p>
+            </div>
+            <div style={{ animation: 'slideUp 0.4s ease 0.6s both' }}>
+              <p className={`font-black tabular-nums ${cfg.ptsColor}`} style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.5rem)' }}>
+                {player?.score ?? 0} pts
+              </p>
+            </div>
           </div>
+
           <style>{`
-            @keyframes popIn {
-              from { opacity: 0; transform: scale(0.5); }
-              to { opacity: 1; transform: scale(1); }
+            @keyframes trophyDrop {
+              from { opacity: 0; transform: scale(0.2) translateY(-60px); }
+              to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            @keyframes nameSplash {
+              from { opacity: 0; transform: scale(2); filter: blur(12px); }
+              to { opacity: 1; transform: scale(1); filter: blur(0); }
+            }
+            @keyframes slideUp {
+              from { opacity: 0; transform: translateY(24px); }
+              to { opacity: 1; transform: translateY(0); }
             }
           `}</style>
         </div>
@@ -594,23 +672,8 @@ export default function ResultsView({ game }: Props) {
         >
           Round {game.current_round} · Results
         </p>
-        <div className="flex flex-col gap-3 overflow-auto">
-          {results.map((answer, i) => {
-            const isRevealed = i >= revealThreshold
-            const isNewest = i === revealThreshold
-            return (
-              <div
-                key={answer.id}
-                style={{
-                  transition: 'opacity 0.6s ease, transform 0.6s ease',
-                  opacity: isRevealed ? 1 : 0,
-                  transform: isRevealed ? 'translateY(0)' : 'translateY(16px)',
-                }}
-              >
-                <AnswerCard answer={answer} i={i} isNewest={isNewest} />
-              </div>
-            )
-          })}
+        <div className="overflow-auto flex-1">
+          <AnswerGrid answers={results} />
         </div>
       </div>
 
@@ -635,22 +698,13 @@ export default function ResultsView({ game }: Props) {
                       : 'border-white/10 bg-white/5'
                   }`}
                 >
-                  <span
-                    className="w-6 text-center shrink-0"
-                    style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
-                  >
+                  <span className="w-6 text-center shrink-0" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}>
                     {i < 3 ? MEDALS[i] : `#${i + 1}`}
                   </span>
-                  <p
-                    className="flex-1 font-semibold text-white truncate"
-                    style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}
-                  >
+                  <p className="flex-1 font-semibold text-white truncate" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}>
                     {displayName}
                   </p>
-                  <p
-                    className="font-black text-white shrink-0 tabular-nums"
-                    style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}
-                  >
+                  <p className="font-black text-white shrink-0 tabular-nums" style={{ fontSize: 'clamp(1rem, 1.8vw, 1.5rem)' }}>
                     {player.score}
                   </p>
                 </div>

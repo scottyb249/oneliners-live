@@ -52,25 +52,44 @@ export default function ActiveView({ game, answerCount }: Props) {
             <div
               key={i}
               style={{
-                width: 'clamp(90px, 12vw, 160px)',
-                height: 'clamp(90px, 12vw, 160px)',
-                background: 'linear-gradient(145deg, #f5e6c8 0%, #e8d5a0 50%, #d4b96a 100%)',
-                border: '3px solid #8b6914',
-                borderRadius: '6px',
-                boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.6), 0 6px 20px rgba(0,0,0,0.7)',
+                width: 'clamp(100px, 14vw, 180px)',
+                height: 'clamp(70px, 10vw, 130px)',
+                background: 'linear-gradient(160deg, #2a1a0a 0%, #1a0d05 40%, #0f0803 100%)',
+                border: '2px solid #5a3a1a',
+                borderRadius: '4px',
+                boxShadow: `
+                  inset 0 1px 0 rgba(255,255,255,0.06),
+                  inset 0 -1px 0 rgba(0,0,0,0.5),
+                  inset 3px 0 8px rgba(0,0,0,0.4),
+                  inset -3px 0 8px rgba(0,0,0,0.3),
+                  0 8px 30px rgba(0,0,0,0.8),
+                  0 2px 4px rgba(0,0,0,0.9)
+                `,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden',
                 animation: `tileReveal 0.5s cubic-bezier(0.175,0.885,0.32,1.275) ${i * 0.12}s both`,
               }}
             >
+              {/* Wood grain lines */}
+              <div style={{
+                position: 'absolute', inset: 0, opacity: 0.15,
+                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.3) 8px, rgba(0,0,0,0.3) 9px)',
+              }} />
+              {/* Top edge highlight */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'rgba(255,255,255,0.08)' }} />
               <span
                 style={{
-                  fontSize: 'clamp(3rem, 7.5vw, 7rem)',
+                  fontSize: 'clamp(3rem, 8vw, 7.5rem)',
                   fontWeight: 900,
-                  color: '#1a0a00',
+                  color: '#d4a855',
                   fontFamily: 'Georgia, serif',
                   lineHeight: 1,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 0 20px rgba(180,130,50,0.3)',
+                  position: 'relative',
+                  zIndex: 1,
                 }}
               >
                 {letter}

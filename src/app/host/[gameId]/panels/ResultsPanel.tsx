@@ -43,6 +43,7 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [confirmNextRound, setConfirmNextRound] = useState(false)
   const [resolvedTies, setResolvedTies] = useState<ResolvedTie[]>([])
   const [speedResolutionDone, setSpeedResolutionDone] = useState(false)
 
@@ -281,24 +282,29 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
               key={answer.id}
               className={`rounded-xl border px-4 py-2.5 transition-all duration-300 ${
                 isRevealed
-                  ? 'border-white/10 bg-white/5 opacity-100'
-                  : 'border-white/5 bg-white/[0.02] opacity-25'
+                  ? 'border-yellow-400/30 bg-white/10 opacity-100'
+                  : 'border-white/5 bg-white/[0.02] opacity-20'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/40 mb-0.5">
+                  <p className="text-xs text-white/50 mb-0.5">
                     {answer.players?.name ?? '—'}
                     {answer.players?.team_name ? ` (${answer.players.team_name})` : ''}
                     {answer.is_fastest && (
-                      <span className="ml-2 text-yellow-400 font-semibold">⚡ Fastest +1</span>
+                      <span className="ml-2 text-yellow-400 font-bold">⚡ Fastest +1</span>
                     )}
                   </p>
-                  <p className="text-sm text-white">{answer.content}</p>
+                  <p className={`text-sm font-semibold ${isRevealed ? 'text-white' : 'text-white/30'}`}>{answer.content}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-lg font-black text-yellow-400">{answer.vote_count}</p>
                   <p className="text-xs text-white/30">votes</p>
+                  {isFinalResults && answer.vote_count > 0 && (
+                    <p className="text-xs font-bold text-yellow-400/60">
+                      = {answer.vote_count * 2 + (answer.is_fastest ? 1 : 0)} pts
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -403,12 +409,40 @@ export default function ResultsPanel({ game, onNextRound, onTakeBreak, onFinalRo
       {/* Non-final action buttons */}
       {!isFinalResults && (
         <div className="space-y-3 pt-2">
-          <button
-            onClick={onNextRound}
-            className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
-          >
-            Next Round →
-          </button>
+          {confirmNextRound ? (
+            <div className="rounded-xl border border-orange-400/40 bg-orange-400/10 px-4 py-4 flex flex-col gap-3">
+              <p className="text-sm font-semibold text-orange-300 text-center">
+                ⚠️ Not all answers revealed yet. Move on anyway?
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setConfirmNextRound(false)}
+                  className="rounded-xl border border-white/20 py-3 text-sm font-semibold text-white/70 transition-all hover:bg-white/10 active:scale-95"
+                >
+                  ← Go Back
+                </button>
+                <button
+                  onClick={onNextRound}
+                  className="rounded-xl bg-yellow-400 py-3 text-sm font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+                >
+                  Yes, Next Round →
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                if (!allRevealed) {
+                  setConfirmNextRound(true)
+                } else {
+                  onNextRound()
+                }
+              }}
+              className="w-full rounded-xl bg-yellow-400 py-4 text-lg font-bold text-black transition-all hover:bg-yellow-300 active:scale-95"
+            >
+              Next Round →
+            </button>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={onTakeBreak}

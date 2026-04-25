@@ -145,10 +145,14 @@ export default function HostClient({ gameId: rawGameId }: Props) {
     setPickerTargetRound(targetRound)
     setPickerIsFinalRound(isFinalRound)
     setPickerCameFromResults(fromResults)
-    await supabase
-      .from('games')
-      .update({ status: 'picking' })
-      .eq('id', gameId)
+    // For final round, keep display on kracronym_intro while host browses —
+    // only regular rounds need 'picking' to show GetReadyView on display
+    if (!isFinalRound) {
+      await supabase
+        .from('games')
+        .update({ status: 'picking' })
+        .eq('id', gameId)
+    }
     setShowAcronymPicker(true)
   }
 
