@@ -245,7 +245,7 @@ export default function ResultsView({ game }: Props) {
       >
         <div className="flex items-center justify-between gap-4 h-full">
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white/60 mb-2" style={{ fontSize: 'clamp(0.9rem, 1.6vw, 1.3rem)' }}>
+            <p className="font-bold text-white/60 mb-2" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.75rem)' }}>
               {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
               <span className="text-white/80">{answer.players?.name ?? '—'}</span>
               {answer.players?.team_name && (

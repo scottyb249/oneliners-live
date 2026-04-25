@@ -134,7 +134,7 @@ export default function EndedView({ game }: Props) {
 
       {/* Olympic Podium — centered, fills most of screen */}
       {top3.length > 0 && (
-        <div className="relative z-10 flex w-full items-end justify-center gap-4 px-4 max-w-5xl" style={{ height: '55vh' }}>
+        <div className="relative z-10 flex w-full items-end justify-center gap-6 px-2 max-w-5xl" style={{ height: '58vh', marginTop: '2vh' }}>
           {PODIUM_ORDER.map((leaderIdx, podiumIdx) => {
             const player = top3[leaderIdx]
             if (!player) return <div key={podiumIdx} className="flex-1" />
@@ -142,7 +142,6 @@ export default function EndedView({ game }: Props) {
             const podiumHeightVh = ['28vh', '42vh', '18vh'][podiumIdx]
             return (
               <div key={player.id} className="flex flex-1 flex-col items-center" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                {/* Trophy + name — sits above podium block */}
                 <div className="flex flex-col items-center gap-2 text-center shrink-0 mb-3">
                   <span className={TROPHY_COLORS[leaderIdx]} style={{ fontSize: 'clamp(3rem, 6vw, 6rem)' }}>🏆</span>
                   <p className="font-black text-white leading-tight px-2" style={{ fontSize: 'clamp(1.5rem, 3vw, 3rem)' }}>
@@ -152,9 +151,8 @@ export default function EndedView({ game }: Props) {
                     {player.score} pts
                   </p>
                 </div>
-                {/* Podium block */}
                 <div
-                  className={`w-full rounded-t-2xl border-2 bg-gradient-to-b flex items-center justify-center shrink-0 ${PODIUM_COLORS[leaderIdx]}`}
+                  className={`w-full rounded-t-2xl border-2 bg-gradient-to-b flex items-center justify-center shrink-0 ${PODIUM_COLORS[podiumIdx]}`}
                   style={{ height: podiumHeightVh }}
                 >
                   <p className="font-black text-white/90" style={{ fontSize: 'clamp(2.5rem, 5.5vw, 5rem)' }}>
