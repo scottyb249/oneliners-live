@@ -151,7 +151,7 @@ export default function EndedView({ game }: Props) {
                   </p>
                 </div>
                 <div
-                  className={}
+                  className={`w-full rounded-t-2xl border-2 bg-gradient-to-b flex items-center justify-center ${PODIUM_COLORS[leaderIdx]}`}
                   style={{ height: podiumHeights[podiumIdx], minHeight: '80px' }}
                 >
                   <p className="font-black text-white/90" style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}>
