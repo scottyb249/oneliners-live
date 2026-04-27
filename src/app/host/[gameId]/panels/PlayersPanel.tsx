@@ -11,6 +11,7 @@ interface Player {
   team_name: string | null
   score: number
   kicked: boolean
+  avatar: string | null
 }
 
 const ROLE_ICONS: Record<string, string> = {
@@ -32,6 +33,27 @@ interface Props {
   onClose: () => void
 }
 
+function AvatarSprite({ id, size = 40 }: { id: string | null; size?: number }) {
+  const avatarId = id ?? 'avatar_01'
+  // Sheet is 1536x1024, 4 frames — show only first frame (idle)
+  const sheetH = 1024
+  const scale = size / sheetH
+  const scaledW = 1536 * scale
+  const scaledH = sheetH * scale
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      backgroundImage: `url(/avatars/${avatarId}.png)`,
+      backgroundSize: `${scaledW}px ${scaledH}px`,
+      backgroundPosition: '0 0',
+      backgroundRepeat: 'no-repeat',
+      imageRendering: 'pixelated',
+      flexShrink: 0,
+    }} />
+  )
+}
+
 export default function PlayersPanel({ game, onClose }: Props) {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +64,7 @@ export default function PlayersPanel({ game, onClose }: Props) {
     async function load() {
       const { data } = await supabase
         .from('players')
-        .select('id, name, role, team_name, score, kicked')
+        .select('id, name, role, team_name, score, kicked, avatar')
         .eq('game_id', game.id)
         .eq('is_host', false)
         .order('score', { ascending: false })
@@ -171,9 +193,7 @@ export default function PlayersPanel({ game, onClose }: Props) {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-xl shrink-0">
-                      {ROLE_ICONS[player.role] ?? '🎮'}
-                    </span>
+                    <AvatarSprite id={player.avatar} size={40} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">
                         {displayName}

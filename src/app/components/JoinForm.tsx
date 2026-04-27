@@ -43,7 +43,37 @@ export default function JoinForm() {
   const [teamsLoading, setTeamsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [wasKicked, setWasKicked] = useState(false)
+  const [avatar, setAvatar] = useState<string | null>(null)
+
+  const AVATARS = [
+    { id: 'avatar_01', label: 'Lucha' },
+    { id: 'avatar_02', label: 'Kraken' },
+    { id: 'avatar_03', label: 'Wrestler' },
+  ]
+
+  // Frame display: each sprite sheet is 4 frames wide, 1 frame tall
+  // We show only frame 1 (idle) by using background-position
+  function AvatarSprite({ id, size = 64 }: { id: string; size?: number }) {
+    // Sheet is 1536x1024, 4 frames wide = frame width 384, height 1024
+    // We scale the sheet so frame height = size, then show only first frame
+    const sheetW = 1536
+    const sheetH = 1024
+    const frameW = sheetW / 4
+    const scale = size / sheetH
+    const scaledW = sheetW * scale
+    const scaledH = sheetH * scale
+    return (
+      <div style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(/avatars/${id}.png)`,
+        backgroundSize: `${scaledW}px ${scaledH}px`,
+        backgroundPosition: '0 0',
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated',
+      }} />
+    )
+  }
 
   // Check for kicked redirect before attempting session resume
   useEffect(() => {
@@ -162,6 +192,7 @@ export default function JoinForm() {
           role,
           team_name: (role === 'team_leader' || role === 'team_member') ? teamName.trim() : null,
           is_host: false,
+          avatar: avatar ?? 'avatar_01',
         })
         .select('id')
         .single()
@@ -309,6 +340,30 @@ export default function JoinForm() {
           )}
         </div>
       )}
+
+      {/* Avatar Picker */}
+      <div className="space-y-3">
+        <p className="block text-sm font-semibold uppercase tracking-widest text-yellow-400">
+          Pick Your Character
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {AVATARS.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => setAvatar(a.id)}
+              className={`flex flex-col items-center gap-2 rounded-xl border py-4 transition-all ${
+                avatar === a.id
+                  ? 'border-yellow-400 bg-yellow-400/10 ring-2 ring-yellow-400/30'
+                  : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+              }`}
+            >
+              <AvatarSprite id={a.id} size={72} />
+              <p className="text-xs font-semibold text-white/60">{a.label}</p>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Error */}
       {error && (
