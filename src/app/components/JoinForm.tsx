@@ -43,6 +43,7 @@ export default function JoinForm() {
   const [teamsLoading, setTeamsLoading] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [wasKicked, setWasKicked] = useState(false)
   const [avatar, setAvatar] = useState<string | null>(null)
 
   const AVATARS = [
