@@ -55,23 +55,25 @@ export default function JoinForm() {
   // Frame display: each sprite sheet is 4 frames wide, 1 frame tall
   // We show only frame 1 (idle) by using background-position
   function AvatarSprite({ id, size = 64 }: { id: string; size?: number }) {
-    // Sheet is 1536x1024, 4 frames wide = frame width 384, height 1024
-    // We scale the sheet so frame height = size, then show only first frame
-    const sheetW = 1536
-    const sheetH = 1024
-    const frameW = sheetW / 4
-    const scale = size / sheetH
-    const scaledW = sheetW * scale
-    const scaledH = sheetH * scale
+    // Sheet: 1536x1024, 4 frames. Character occupies ~x:95-344, y:319-705 per frame
+    // Frame width = 384, character width ~249, height ~386
+    // Scale so character fills the display size
+    const charH = 386
+    const scale = size / charH
+    const scaledW = 1536 * scale
+    const scaledH = 1024 * scale
+    const offsetX = -(95 * scale)
+    const offsetY = -(319 * scale)
     return (
       <div style={{
         width: size,
         height: size,
         backgroundImage: `url(/avatars/${id}.png)`,
         backgroundSize: `${scaledW}px ${scaledH}px`,
-        backgroundPosition: '0 0',
+        backgroundPosition: `${offsetX}px ${offsetY}px`,
         backgroundRepeat: 'no-repeat',
         imageRendering: 'pixelated',
+        overflow: 'hidden',
       }} />
     )
   }

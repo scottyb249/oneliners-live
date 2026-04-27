@@ -35,21 +35,24 @@ interface Props {
 
 function AvatarSprite({ id, size = 40 }: { id: string | null; size?: number }) {
   const avatarId = id ?? 'avatar_01'
-  // Sheet is 1536x1024, 4 frames — show only first frame (idle)
-  const sheetH = 1024
-  const scale = size / sheetH
+  // Sheet: 1536x1024, 4 frames. Character at ~x:95-344, y:319-705 in frame 1
+  const charH = 386
+  const scale = size / charH
   const scaledW = 1536 * scale
-  const scaledH = sheetH * scale
+  const scaledH = 1024 * scale
+  const offsetX = -(95 * scale)
+  const offsetY = -(319 * scale)
   return (
     <div style={{
       width: size,
       height: size,
       backgroundImage: `url(/avatars/${avatarId}.png)`,
       backgroundSize: `${scaledW}px ${scaledH}px`,
-      backgroundPosition: '0 0',
+      backgroundPosition: `${offsetX}px ${offsetY}px`,
       backgroundRepeat: 'no-repeat',
       imageRendering: 'pixelated',
       flexShrink: 0,
+      overflow: 'hidden',
     }} />
   )
 }
