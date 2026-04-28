@@ -41,6 +41,7 @@ export interface Player {
   is_tiebreaker_participant: boolean
   final_position: number | null
   created_at: string
+  avatar: string | null
 }
 
 export interface Answer {
