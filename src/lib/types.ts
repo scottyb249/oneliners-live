@@ -58,6 +58,7 @@ export interface Answer {
   players?: {
     name: string
     team_name: string | null
+    avatar: string | null
   }
 }
 

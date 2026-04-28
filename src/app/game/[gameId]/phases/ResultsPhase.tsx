@@ -67,7 +67,7 @@ export default function ResultsPhase({ game, player }: Props) {
       const [{ data: answers }, { data: votes }, { data: players }] = await Promise.all([
         supabase
           .from('answers')
-          .select('*, players(name, team_name)')
+          .select('*, players(name, team_name, avatar)')
           .eq('game_id', game.id)
           .eq('approved', true)
           .eq('is_tiebreaker', false)
