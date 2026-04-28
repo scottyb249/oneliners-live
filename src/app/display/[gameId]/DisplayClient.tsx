@@ -34,6 +34,7 @@ export default function DisplayClient({ gameId }: Props) {
         .select('name, score')
         .eq('game_id', gameId)
         .eq('is_host', false)
+        .in('role', ['individual', 'team_leader'])
         .order('score', { ascending: false })
       setLeaderboard(data ?? [])
     }
