@@ -39,7 +39,7 @@ const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number;
   avatar_01: { charX: 95, charY: 319, charW: 249, charH: 385 }, // Lucha Wrestler
   avatar_02: { charX: 72, charY: 383, charW: 288, charH: 242 }, // Kraken
   avatar_03: { charX: 95, charY: 319, charW: 249, charH: 386 }, // X Wrestler
-  avatar_04: { charX: 100, charY: 272, charW: 184, charH: 385 }, // Banana
+  avatar_04: { charX: 87, charY: 312, charW: 209, charH: 345 }, // Banana
 }
 
 function AvatarSprite({ id, size = 40 }: { id: string | null; size?: number }) {
