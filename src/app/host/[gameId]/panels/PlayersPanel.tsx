@@ -33,15 +33,22 @@ interface Props {
   onClose: () => void
 }
 
+// Per-avatar frame 1 bounding box data, measured via Pillow
+// Sheet: 1536x1024, 4 frames horizontally (384px each)
+const AVATAR_DATA: Record<string, { charX: number; charY: number; charH: number }> = {
+  avatar_01: { charX: 95, charY: 319, charH: 385 }, // Lucha Wrestler
+  avatar_02: { charX: 72, charY: 383, charH: 242 }, // Kraken
+  avatar_03: { charX: 95, charY: 319, charH: 386 }, // X Wrestler
+}
+
 function AvatarSprite({ id, size = 40 }: { id: string | null; size?: number }) {
   const avatarId = id ?? 'avatar_01'
-  // Sheet: 1536x1024, 4 frames. Character at ~x:95-344, y:319-705 in frame 1
-  const charH = 386
-  const scale = size / charH
+  const data = AVATAR_DATA[avatarId] ?? AVATAR_DATA.avatar_01
+  const scale = size / data.charH
   const scaledW = 1536 * scale
   const scaledH = 1024 * scale
-  const offsetX = -(95 * scale)
-  const offsetY = -(319 * scale)
+  const offsetX = -(data.charX * scale)
+  const offsetY = -(data.charY * scale)
   return (
     <div style={{
       width: size,

@@ -52,18 +52,21 @@ export default function JoinForm() {
     { id: 'avatar_03', label: 'Wrestler' },
   ]
 
-  // Frame display: each sprite sheet is 4 frames wide, 1 frame tall
-  // We show only frame 1 (idle) by using background-position
+  // Per-avatar frame 1 bounding box data, measured via Pillow
+  // Sheet: 1536x1024, 4 frames horizontally (384px each)
+  const AVATAR_DATA: Record<string, { charX: number; charY: number; charH: number }> = {
+    avatar_01: { charX: 95,  charY: 319, charH: 385 }, // Lucha Wrestler
+    avatar_02: { charX: 72,  charY: 383, charH: 242 }, // Kraken
+    avatar_03: { charX: 95,  charY: 319, charH: 386 }, // X Wrestler
+  }
+
   function AvatarSprite({ id, size = 64 }: { id: string; size?: number }) {
-    // Sheet: 1536x1024, 4 frames. Character occupies ~x:95-344, y:319-705 per frame
-    // Frame width = 384, character width ~249, height ~386
-    // Scale so character fills the display size
-    const charH = 386
-    const scale = size / charH
+    const data = AVATAR_DATA[id] ?? AVATAR_DATA.avatar_01
+    const scale = size / data.charH
     const scaledW = 1536 * scale
     const scaledH = 1024 * scale
-    const offsetX = -(95 * scale)
-    const offsetY = -(319 * scale)
+    const offsetX = -(data.charX * scale)
+    const offsetY = -(data.charY * scale)
     return (
       <div style={{
         width: size,
