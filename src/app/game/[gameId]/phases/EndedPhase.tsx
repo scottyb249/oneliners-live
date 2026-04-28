@@ -16,9 +16,42 @@ interface LeaderboardEntry {
   team_name: string | null
   score: number
   final_position: number | null
+  avatar: string | null
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
+
+// ── Avatar sprite ─────────────────────────────────────────────────────────
+const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number; charH: number }> = {
+  avatar_01: { charX: 95,  charY: 319, charW: 249, charH: 385 },
+  avatar_02: { charX: 72,  charY: 383, charW: 288, charH: 242 },
+  avatar_03: { charX: 95,  charY: 319, charW: 249, charH: 386 },
+  avatar_04: { charX: 159, charY: 312, charW: 209, charH: 345 },
+  avatar_05: { charX: 127, charY: 319, charW: 242, charH: 386 },
+  avatar_06: { charX: 143, charY: 319, charW: 241, charH: 306 },
+}
+function AvatarSprite({ id, size = 48 }: { id: string | null; size?: number }) {
+  const avatarId = id ?? 'avatar_01'
+  const data = AVATAR_DATA[avatarId] ?? AVATAR_DATA.avatar_01
+  const scale = size / data.charH
+  const scaledW = 1536 * scale
+  const scaledH = 1024 * scale
+  const offsetX = -(data.charX * scale)
+  const offsetY = -(data.charY * scale)
+  const displayW = data.charW * scale
+  return (
+    <div style={{
+      width: displayW, height: size,
+      backgroundImage: `url(/avatars/${avatarId}.png)`,
+      backgroundSize: `${scaledW}px ${scaledH}px`,
+      backgroundPosition: `${offsetX}px ${offsetY}px`,
+      backgroundRepeat: 'no-repeat',
+      imageRendering: 'pixelated',
+      flexShrink: 0,
+      overflow: 'hidden',
+    }} />
+  )
+}
 
 export default function EndedPhase({ game, player }: Props) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -28,7 +61,7 @@ export default function EndedPhase({ game, player }: Props) {
     async function load() {
       const { data } = await supabase
         .from('players')
-        .select('id, name, role, team_name, score, final_position')
+        .select('id, name, role, team_name, score, final_position, avatar')
         .eq('game_id', game.id)
         .neq('role', 'team_member')
         .neq('role', 'crowd_voter')
@@ -70,6 +103,9 @@ export default function EndedPhase({ game, player }: Props) {
 
       {!isNonScoring && myFinalPos && myEntry && (
         <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 px-6 py-5 text-center">
+          <div className="flex justify-center mb-2">
+            <AvatarSprite id={player.avatar ?? null} size={72} />
+          </div>
           <p className="text-sm text-white/50">You finished</p>
           <p className="mt-1 text-5xl font-black text-yellow-400">
             {myFinalPos <= 3 ? MEDALS[myFinalPos - 1] : `#${myFinalPos}`}
@@ -113,6 +149,7 @@ export default function EndedPhase({ game, player }: Props) {
               <span className="w-8 shrink-0 text-center text-xl">
                 {pos != null && pos <= 3 ? MEDALS[pos - 1] : `#${pos ?? i + 1}`}
               </span>
+              <AvatarSprite id={entry.avatar ?? null} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white truncate">
                   {displayName}{' '}

@@ -77,6 +77,38 @@ function Confetti() {
 }
 
 const PODIUM_ORDER = [1, 0, 2] // 2nd, 1st, 3rd
+
+// ── Avatar sprite ─────────────────────────────────────────────────────────
+const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number; charH: number }> = {
+  avatar_01: { charX: 95,  charY: 319, charW: 249, charH: 385 },
+  avatar_02: { charX: 72,  charY: 383, charW: 288, charH: 242 },
+  avatar_03: { charX: 95,  charY: 319, charW: 249, charH: 386 },
+  avatar_04: { charX: 159, charY: 312, charW: 209, charH: 345 },
+  avatar_05: { charX: 127, charY: 319, charW: 242, charH: 386 },
+  avatar_06: { charX: 143, charY: 319, charW: 241, charH: 306 },
+}
+function AvatarSprite({ id, size = 48 }: { id: string | null; size?: number }) {
+  const avatarId = id ?? 'avatar_01'
+  const data = AVATAR_DATA[avatarId] ?? AVATAR_DATA.avatar_01
+  const scale = size / data.charH
+  const scaledW = 1536 * scale
+  const scaledH = 1024 * scale
+  const offsetX = -(data.charX * scale)
+  const offsetY = -(data.charY * scale)
+  const displayW = data.charW * scale
+  return (
+    <div style={{
+      width: displayW, height: size,
+      backgroundImage: `url(/avatars/${avatarId}.png)`,
+      backgroundSize: `${scaledW}px ${scaledH}px`,
+      backgroundPosition: `${offsetX}px ${offsetY}px`,
+      backgroundRepeat: 'no-repeat',
+      imageRendering: 'pixelated',
+      flexShrink: 0,
+      overflow: 'hidden',
+    }} />
+  )
+}
 const PODIUM_HEIGHTS = ['h-36', 'h-52', 'h-28']
 const PODIUM_COLORS = [
   'from-zinc-600 to-zinc-700 border-zinc-400/50',   // 2nd - silver
@@ -143,6 +175,7 @@ export default function EndedView({ game }: Props) {
             return (
               <div key={player.id} className="flex flex-1 flex-col items-center" style={{ height: '100%', justifyContent: 'flex-end' }}>
                 <div className="flex flex-col items-center gap-1 text-center shrink-0 mb-3 w-full px-2">
+                  <AvatarSprite id={player.avatar ?? null} size={72} />
                   <span className={TROPHY_COLORS[leaderIdx]} style={{ fontSize: 'clamp(2rem, 4.5vw, 4.5rem)' }}>🏆</span>
                   <p className="font-black text-white leading-tight w-full" style={{ fontSize: 'clamp(1rem, 2.2vw, 2.2rem)', wordBreak: 'break-word' }}>
                     {displayName}
@@ -170,6 +203,7 @@ export default function EndedView({ game }: Props) {
         <div className="relative z-10 w-full max-w-3xl flex flex-wrap justify-center gap-2 shrink-0">
           {rest.map((player, i) => (
             <div key={player.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2">
+              <AvatarSprite id={player.avatar ?? null} size={32} />
               <span className="font-bold text-white/30 tabular-nums" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>#{i + 4}</span>
               <p className="font-semibold text-white" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>{player.team_name ?? player.name}</p>
               <p className="font-black text-white/50 tabular-nums" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.1rem)' }}>{player.score} pts</p>

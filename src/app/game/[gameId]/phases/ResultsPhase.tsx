@@ -14,6 +14,38 @@ interface AnswerWithVotes extends Answer {
   is_fastest: boolean
 }
 
+// ── Avatar sprite ─────────────────────────────────────────────────────────
+const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number; charH: number }> = {
+  avatar_01: { charX: 95,  charY: 319, charW: 249, charH: 385 },
+  avatar_02: { charX: 72,  charY: 383, charW: 288, charH: 242 },
+  avatar_03: { charX: 95,  charY: 319, charW: 249, charH: 386 },
+  avatar_04: { charX: 159, charY: 312, charW: 209, charH: 345 },
+  avatar_05: { charX: 127, charY: 319, charW: 242, charH: 386 },
+  avatar_06: { charX: 143, charY: 319, charW: 241, charH: 306 },
+}
+function AvatarSprite({ id, size = 48 }: { id: string | null; size?: number }) {
+  const avatarId = id ?? 'avatar_01'
+  const data = AVATAR_DATA[avatarId] ?? AVATAR_DATA.avatar_01
+  const scale = size / data.charH
+  const scaledW = 1536 * scale
+  const scaledH = 1024 * scale
+  const offsetX = -(data.charX * scale)
+  const offsetY = -(data.charY * scale)
+  const displayW = data.charW * scale
+  return (
+    <div style={{
+      width: displayW, height: size,
+      backgroundImage: `url(/avatars/${avatarId}.png)`,
+      backgroundSize: `${scaledW}px ${scaledH}px`,
+      backgroundPosition: `${offsetX}px ${offsetY}px`,
+      backgroundRepeat: 'no-repeat',
+      imageRendering: 'pixelated',
+      flexShrink: 0,
+      overflow: 'hidden',
+    }} />
+  )
+}
+
 export default function ResultsPhase({ game, player }: Props) {
   const [results, setResults] = useState<AnswerWithVotes[]>([])
   const [leaderboard, setLeaderboard] = useState<Player[]>([])
@@ -152,6 +184,7 @@ export default function ResultsPhase({ game, player }: Props) {
             className={`w-full rounded-2xl border-2 px-6 py-8 flex flex-col items-center gap-3 ${borderColors[idx]}`}
             style={{ animation: 'popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both' }}
           >
+            <AvatarSprite id={revealedPlayer.avatar ?? null} size={80} />
             <p className={`text-2xl font-black uppercase tracking-widest ${placeColors[idx]}`}>
               {placeLabels[idx]}
             </p>
@@ -219,7 +252,8 @@ export default function ResultsPhase({ game, player }: Props) {
                 highlight ? 'border-yellow-400/40 bg-yellow-400/10' : 'border-white/10 bg-white/5'
               }`}
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3">
+                <AvatarSprite id={(answer as any).players?.avatar ?? null} size={40} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white/40 mb-1">
                     #{i + 1} · {answer.players?.name ?? 'Unknown'}

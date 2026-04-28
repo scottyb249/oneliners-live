@@ -15,6 +15,38 @@ interface AnswerWithVotes extends Answer {
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+// ── Avatar sprite ─────────────────────────────────────────────────────────
+const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number; charH: number }> = {
+  avatar_01: { charX: 95,  charY: 319, charW: 249, charH: 385 },
+  avatar_02: { charX: 72,  charY: 383, charW: 288, charH: 242 },
+  avatar_03: { charX: 95,  charY: 319, charW: 249, charH: 386 },
+  avatar_04: { charX: 159, charY: 312, charW: 209, charH: 345 },
+  avatar_05: { charX: 127, charY: 319, charW: 242, charH: 386 },
+  avatar_06: { charX: 143, charY: 319, charW: 241, charH: 306 },
+}
+function AvatarSprite({ id, size = 48 }: { id: string | null; size?: number }) {
+  const avatarId = id ?? 'avatar_01'
+  const data = AVATAR_DATA[avatarId] ?? AVATAR_DATA.avatar_01
+  const scale = size / data.charH
+  const scaledW = 1536 * scale
+  const scaledH = 1024 * scale
+  const offsetX = -(data.charX * scale)
+  const offsetY = -(data.charY * scale)
+  const displayW = data.charW * scale
+  return (
+    <div style={{
+      width: displayW, height: size,
+      backgroundImage: `url(/avatars/${avatarId}.png)`,
+      backgroundSize: `${scaledW}px ${scaledH}px`,
+      backgroundPosition: `${offsetX}px ${offsetY}px`,
+      backgroundRepeat: 'no-repeat',
+      imageRendering: 'pixelated',
+      flexShrink: 0,
+      overflow: 'hidden',
+    }} />
+  )
+}
+
 // ── Gold confetti for 1st place ───────────────────────────────────────────
 function GoldConfetti() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -245,16 +277,19 @@ export default function ResultsView({ game }: Props) {
       >
         <div className="flex items-center justify-between gap-4 h-full">
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-white/60 mb-2" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.75rem)' }}>
-              {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
-              <span className="text-white/80">{answer.players?.name ?? '—'}</span>
-              {answer.players?.team_name && (
-                <span className="text-yellow-400/80"> · {answer.players.team_name}</span>
-              )}
-              {answer.is_fastest && (
-                <span className="ml-2 text-yellow-400"> ⚡ Fastest +1</span>
-              )}
-            </p>
+            <div className="flex items-center gap-2 mb-2">
+              <AvatarSprite id={(answer as any).players?.avatar ?? null} size={36} />
+              <p className="font-bold text-white/60" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.75rem)' }}>
+                {i < 3 ? MEDALS[i] : `#${i + 1}`}{' '}
+                <span className="text-white/80">{answer.players?.name ?? '—'}</span>
+                {answer.players?.team_name && (
+                  <span className="text-yellow-400/80"> · {answer.players.team_name}</span>
+                )}
+                {answer.is_fastest && (
+                  <span className="ml-2 text-yellow-400"> ⚡ Fastest +1</span>
+                )}
+              </p>
+            </div>
             <p className="font-black text-white leading-tight" style={{ fontSize: 'clamp(1.8rem, 4vw, 3.5rem)', wordBreak: 'break-word' }}>
               {answer.content}
             </p>
@@ -376,6 +411,7 @@ export default function ResultsView({ game }: Props) {
                     >
                       #{position}
                     </span>
+                    <AvatarSprite id={player.avatar ?? null} size={40} />
                     <p
                       className="flex-1 font-bold text-white truncate"
                       style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}
@@ -491,6 +527,9 @@ export default function ResultsView({ game }: Props) {
               <p className={`font-black uppercase tracking-[0.4em] ${cfg.labelColor}`} style={{ fontSize: 'clamp(1rem, 2.5vw, 2rem)' }}>
                 {cfg.label}
               </p>
+            </div>
+            <div style={{ animation: 'popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.25s both' }}>
+              <AvatarSprite id={player?.avatar ?? null} size={120} />
             </div>
             <div style={{ animation: 'nameSplash 0.7s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s both' }}>
               <p className={`font-black leading-none ${cfg.nameColor}`} style={{ fontSize: 'clamp(2.5rem, 8vw, 7rem)', textShadow: `0 0 40px ${cfg.glow}` }}>
@@ -610,6 +649,11 @@ export default function ResultsView({ game }: Props) {
               </p>
             </div>
 
+            {/* Winner avatar */}
+            <div style={{ animation: 'popIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s both' }}>
+              <AvatarSprite id={winner?.avatar ?? null} size={140} />
+            </div>
+
             {/* Winner name — the big slam */}
             <div style={{ animation: 'nameSplash 0.7s cubic-bezier(0.175,0.885,0.32,1.275) 0.35s both' }}>
               <p
@@ -654,6 +698,10 @@ export default function ResultsView({ game }: Props) {
             @keyframes slideUp {
               from { opacity: 0; transform: translateY(24px); }
               to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes popIn {
+              from { opacity: 0; transform: scale(0.5); }
+              to { opacity: 1; transform: scale(1); }
             }
           `}</style>
         </div>
@@ -702,6 +750,7 @@ export default function ResultsView({ game }: Props) {
                   <span className="w-6 text-center shrink-0" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}>
                     {i < 3 ? MEDALS[i] : `#${i + 1}`}
                   </span>
+                  <AvatarSprite id={player.avatar ?? null} size={32} />
                   <p className="flex-1 font-semibold text-white truncate" style={{ fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)' }}>
                     {displayName}
                   </p>
