@@ -52,16 +52,18 @@ export default function JoinForm() {
     { id: 'avatar_03', label: 'Wrestler' },
     { id: 'avatar_04', label: 'Banana' },
     { id: 'avatar_05', label: 'Idol' },
+    { id: 'avatar_06', label: 'Raccoon' },
   ]
 
   // Per-avatar frame 1 bounding box data, measured via Pillow
   // Sheet: 1536x1024, 4 frames horizontally (384px each)
   const AVATAR_DATA: Record<string, { charX: number; charY: number; charW: number; charH: number }> = {
-    avatar_01: { charX: 95, charY: 319, charW: 249, charH: 385 }, // Lucha Wrestler
-    avatar_02: { charX: 72, charY: 383, charW: 288, charH: 242 }, // Kraken
-    avatar_03: { charX: 95, charY: 319, charW: 249, charH: 386 }, // X Wrestler
+    avatar_01: { charX: 95,  charY: 319, charW: 249, charH: 385 }, // Lucha Wrestler
+    avatar_02: { charX: 72,  charY: 383, charW: 288, charH: 242 }, // Kraken
+    avatar_03: { charX: 95,  charY: 319, charW: 249, charH: 386 }, // X Wrestler
     avatar_04: { charX: 159, charY: 312, charW: 209, charH: 345 }, // Banana
     avatar_05: { charX: 127, charY: 319, charW: 242, charH: 386 }, // Idol
+    avatar_06: { charX: 143, charY: 319, charW: 241, charH: 306 }, // Raccoon
   }
 
   function AvatarSprite({ id, size = 64 }: { id: string; size?: number }) {
